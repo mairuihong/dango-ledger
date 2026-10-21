@@ -108,9 +108,7 @@ def test_patch_account_sort_changes_order(client: TestClient) -> None:
 def test_delete_empty_account_writes_tombstone(client: TestClient, db) -> None:
     token = register(client)["token"]
     account = create_account(client, token)
-    response = client.delete(
-        f"/api/accounts/{account['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/accounts/{account['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert response.json()["ok"] is True
     assert list_accounts(client, token)["items"] == []
@@ -123,9 +121,7 @@ def test_delete_account_with_transaction_conflict(client: TestClient) -> None:
     token = register(client)["token"]
     account = create_account(client, token)
     _create_expense(client, token, account["id"])
-    response = client.delete(
-        f"/api/accounts/{account['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/accounts/{account['id']}", headers=auth_headers(token))
     assert response.status_code == 409
     assert "流水" in response.json()["detail"]
 
@@ -135,9 +131,7 @@ def test_delete_account_after_transactions_removed(client: TestClient) -> None:
     account = create_account(client, token)
     transaction = _create_expense(client, token, account["id"])
     assert (
-        client.delete(
-            f"/api/accounts/{account['id']}", headers=auth_headers(token)
-        ).status_code
+        client.delete(f"/api/accounts/{account['id']}", headers=auth_headers(token)).status_code
         == 409
     )
     assert (
@@ -146,9 +140,7 @@ def test_delete_account_after_transactions_removed(client: TestClient) -> None:
         ).status_code
         == 200
     )
-    response = client.delete(
-        f"/api/accounts/{account['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/accounts/{account['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert list_accounts(client, token)["items"] == []
 
@@ -167,9 +159,7 @@ def test_delete_destination_account_with_transfer_conflict(
         account_id=source["id"],
         to_account_id=target["id"],
     )
-    response = client.delete(
-        f"/api/accounts/{target['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/accounts/{target['id']}", headers=auth_headers(token))
     assert response.status_code == 409
 
 
@@ -223,9 +213,7 @@ def test_accounts_are_isolated_between_users(client: TestClient) -> None:
     )
     assert patch.status_code == 404
 
-    delete = client.delete(
-        f"/api/accounts/{alice_account['id']}", headers=auth_headers(bob)
-    )
+    delete = client.delete(f"/api/accounts/{alice_account['id']}", headers=auth_headers(bob))
     assert delete.status_code == 404
 
     assert list_accounts(client, alice)["items"][0]["name"] == "Alice 现金"

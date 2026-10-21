@@ -81,9 +81,7 @@ def _get_active_transaction(
     return row
 
 
-def _validate_account(
-    conn: sqlite3.Connection, user_id: str, account_id: str
-) -> sqlite3.Row:
+def _validate_account(conn: sqlite3.Connection, user_id: str, account_id: str) -> sqlite3.Row:
     row = conn.execute(
         """
         SELECT id, name, balance
@@ -126,9 +124,7 @@ def _validate_category(
     return row
 
 
-def _change_balance(
-    conn: sqlite3.Connection, account_id: str, delta: int, timestamp: str
-) -> None:
+def _change_balance(conn: sqlite3.Connection, account_id: str, delta: int, timestamp: str) -> None:
     """在事务内更新账户余额；账户必须存在且未删除。"""
 
     cursor = conn.execute(
@@ -194,9 +190,7 @@ def _find_transfer_pair(
     ).fetchone()
 
 
-def _fetch_joined(
-    db: Database, user_id: str, transaction_id: str
-) -> dict[str, Any] | None:
+def _fetch_joined(db: Database, user_id: str, transaction_id: str) -> dict[str, Any] | None:
     row = db.fetchone(
         f"""
         SELECT {_TX_COLUMNS}
@@ -229,9 +223,7 @@ def list_transactions(
     cleaned_keyword = (keyword or "").strip()
     if cleaned_keyword:
         pattern = f"%{escape_like(cleaned_keyword)}%"
-        conditions.append(
-            "(t.note LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\')"
-        )
+        conditions.append("(t.note LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\')")
         params.extend([pattern, pattern])
 
     where_sql = " AND ".join(conditions)
@@ -406,20 +398,12 @@ def update_transaction(
                 if "occurred_at" in fields and fields["occurred_at"] is not None
                 else primary["occurred_at"]
             )
-            new_note = (
-                (fields["note"] or "")
-                if "note" in fields
-                else primary["note"]
-            )
+            new_note = (fields["note"] or "") if "note" in fields else primary["note"]
 
             old_amount = int(primary["amount"])
             # 旧 delta：转出 -old、转入 +old；新 delta：转出 -new、转入 +new
-            _change_balance(
-                conn, primary["account_id"], old_amount - new_amount, timestamp
-            )
-            _change_balance(
-                conn, primary["to_account_id"], new_amount - old_amount, timestamp
-            )
+            _change_balance(conn, primary["account_id"], old_amount - new_amount, timestamp)
+            _change_balance(conn, primary["to_account_id"], new_amount - old_amount, timestamp)
 
             conn.execute(
                 """
@@ -456,9 +440,7 @@ def update_transaction(
                 if "occurred_at" in fields and fields["occurred_at"] is not None
                 else row["occurred_at"]
             )
-            new_note = (
-                (fields["note"] or "") if "note" in fields else row["note"]
-            )
+            new_note = (fields["note"] or "") if "note" in fields else row["note"]
 
             old_amount = int(row["amount"])
             if row["type"] == "expense":
@@ -513,12 +495,8 @@ def delete_transaction(
             primary = row if row["type"] == "transfer" else pair
 
             # 反向冲销：转出账户加回，转入账户扣回
-            _change_balance(
-                conn, primary["account_id"], int(primary["amount"]), timestamp
-            )
-            _change_balance(
-                conn, primary["to_account_id"], -int(primary["amount"]), timestamp
-            )
+            _change_balance(conn, primary["account_id"], int(primary["amount"]), timestamp)
+            _change_balance(conn, primary["to_account_id"], -int(primary["amount"]), timestamp)
             conn.execute(
                 """
                 UPDATE transactions
@@ -535,11 +513,7 @@ def delete_transaction(
             )
         else:
             # 反向 delta：支出把钱加回，收入把钱扣回
-            reverse = (
-                int(row["amount"])
-                if row["type"] == "expense"
-                else -int(row["amount"])
-            )
+            reverse = int(row["amount"]) if row["type"] == "expense" else -int(row["amount"])
             _change_balance(conn, row["account_id"], reverse, timestamp)
             conn.execute(
                 """

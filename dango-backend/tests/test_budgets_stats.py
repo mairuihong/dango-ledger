@@ -17,9 +17,7 @@ from tests.helpers import (
 
 def _overview(client: TestClient, token: str, month: str | None = None) -> dict:
     params = {"month": month} if month else {}
-    response = client.get(
-        "/api/stats/overview", headers=auth_headers(token), params=params
-    )
+    response = client.get("/api/stats/overview", headers=auth_headers(token), params=params)
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -278,9 +276,7 @@ def test_overview_excludes_deleted_transactions(client: TestClient) -> None:
         category_id=category["id"],
         occurred_at="2024-04-09",
     )
-    client.delete(
-        f"/api/transactions/{created['id']}", headers=auth_headers(token)
-    )
+    client.delete(f"/api/transactions/{created['id']}", headers=auth_headers(token))
     payload = _overview(client, token, "2024-04")
     assert payload["expense"] == 0
     assert payload["transaction_count"] == 0

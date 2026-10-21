@@ -13,9 +13,7 @@ from ..schemas import AccountCreate, AccountPatch
 
 router = APIRouter(prefix="/accounts", tags=["账户"])
 
-_ACCOUNT_COLUMNS = (
-    "id, name, type, balance, initial_balance, sort, created_at, updated_at"
-)
+_ACCOUNT_COLUMNS = "id, name, type, balance, initial_balance, sort, created_at, updated_at"
 
 
 def account_public(row: Any) -> dict[str, Any]:

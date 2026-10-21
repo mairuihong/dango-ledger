@@ -82,9 +82,7 @@ def create_app(
         if errors:
             first = errors[0]
             location = ".".join(
-                str(part)
-                for part in first.get("loc", ())
-                if part not in ("body", "query", "path")
+                str(part) for part in first.get("loc", ()) if part not in ("body", "query", "path")
             )
             message = first.get("msg", "参数不合法")
             detail = f"参数校验失败：{location + ' ' if location else ''}{message}"

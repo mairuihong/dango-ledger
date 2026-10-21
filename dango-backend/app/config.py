@@ -95,15 +95,9 @@ class Settings:
     version: str = "1.0.0"
 
     @classmethod
-    def from_env(cls) -> "Settings":
-        database_raw = (
-            os.getenv("DANGO_DATABASE")
-            or os.getenv("DANGO_DB")
-            or "./data/dango.db"
-        )
-        database_path = _resolve_database_path(
-            database_raw.strip() or "./data/dango.db"
-        )
+    def from_env(cls) -> Settings:
+        database_raw = os.getenv("DANGO_DATABASE") or os.getenv("DANGO_DB") or "./data/dango.db"
+        database_path = _resolve_database_path(database_raw.strip() or "./data/dango.db")
 
         # 同时兼容 DANGO_JWT_SECRET 与旧名 DANGO_SECRET_KEY
         jwt_secret = (
@@ -112,9 +106,7 @@ class Settings:
             or "dango-ledger-dev-secret-change-me"
         )
 
-        origins_raw = (
-            os.getenv("DANGO_CORS_ORIGINS") or os.getenv("DANGO_CORS") or "*"
-        )
+        origins_raw = os.getenv("DANGO_CORS_ORIGINS") or os.getenv("DANGO_CORS") or "*"
         cors_origins = tuple(
             origin.strip() for origin in origins_raw.split(",") if origin.strip()
         ) or ("*",)

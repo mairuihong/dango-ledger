@@ -62,9 +62,7 @@ def test_create_income_updates_balance(client: TestClient) -> None:
     assert get_account(client, token, source["id"])["balance"] == 15000
 
 
-def test_create_transfer_creates_pair_and_moves_balances(
-    client: TestClient, db
-) -> None:
+def test_create_transfer_creates_pair_and_moves_balances(client: TestClient, db) -> None:
     token, source, target, _, _ = _setup(client)
     created = create_transaction(
         client,
@@ -452,16 +450,12 @@ def test_delete_expense_reverses_balance(client: TestClient, db) -> None:
     )
     assert get_account(client, token, source["id"])["balance"] == 7000
 
-    response = client.delete(
-        f"/api/transactions/{created['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/transactions/{created['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert get_account(client, token, source["id"])["balance"] == 10000
     assert list_transactions(client, token)["total"] == 0
 
-    row = db.fetchone(
-        "SELECT deleted_at FROM transactions WHERE id = ?", (created["id"],)
-    )
+    row = db.fetchone("SELECT deleted_at FROM transactions WHERE id = ?", (created["id"],))
     assert row is not None and row["deleted_at"]
 
 
@@ -476,16 +470,12 @@ def test_delete_income_reverses_balance(client: TestClient) -> None:
         category_id=income_category["id"],
     )
     assert get_account(client, token, source["id"])["balance"] == 13000
-    response = client.delete(
-        f"/api/transactions/{created['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/transactions/{created['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert get_account(client, token, source["id"])["balance"] == 10000
 
 
-def test_delete_transfer_removes_pair_and_restores_balances(
-    client: TestClient, db
-) -> None:
+def test_delete_transfer_removes_pair_and_restores_balances(client: TestClient, db) -> None:
     token, source, target, _, _ = _setup(client)
     created = create_transaction(
         client,
@@ -498,9 +488,7 @@ def test_delete_transfer_removes_pair_and_restores_balances(
     assert get_account(client, token, source["id"])["balance"] == 6000
     assert get_account(client, token, target["id"])["balance"] == 4000
 
-    response = client.delete(
-        f"/api/transactions/{created['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/transactions/{created['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert get_account(client, token, source["id"])["balance"] == 10000
     assert get_account(client, token, target["id"])["balance"] == 0
@@ -525,9 +513,7 @@ def test_delete_transfer_by_pair_id(client: TestClient, db) -> None:
         "SELECT id FROM transactions WHERE type = 'transfer_in' AND deleted_at IS NULL"
     )
     assert pair is not None
-    response = client.delete(
-        f"/api/transactions/{pair['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/transactions/{pair['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert list_transactions(client, token)["total"] == 0
     assert get_account(client, token, source["id"])["balance"] == 10000
@@ -536,9 +522,7 @@ def test_delete_transfer_by_pair_id(client: TestClient, db) -> None:
 
 def test_delete_missing_transaction(client: TestClient) -> None:
     token = register(client)["token"]
-    response = client.delete(
-        "/api/transactions/not-exists", headers=auth_headers(token)
-    )
+    response = client.delete("/api/transactions/not-exists", headers=auth_headers(token))
     assert response.status_code == 404
 
 
@@ -554,9 +538,7 @@ def test_delete_other_users_transaction(client: TestClient) -> None:
         account_id=account["id"],
         category_id=category["id"],
     )
-    response = client.delete(
-        f"/api/transactions/{created['id']}", headers=auth_headers(bob)
-    )
+    response = client.delete(f"/api/transactions/{created['id']}", headers=auth_headers(bob))
     assert response.status_code == 404
     assert list_transactions(client, alice)["total"] == 1
 

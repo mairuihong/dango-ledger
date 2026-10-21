@@ -1,4 +1,4 @@
-﻿# 团子账本 · Dango Ledger 前端
+# 团子账本 · Dango Ledger 前端
 
 uni-app x **蒸汽模式**（HBuilderX 项目根目录）。Vue3 组合式 API + Pinia，所有业务数据走 HTTP 接口，前端不落盘。
 
@@ -58,3 +58,5 @@ pages.json        路由 / tabBar
 - token 只放内存，重启需重新登录（按「不用本地储存」约束）。
 - 金额展示用「分」整数格式化；余额和统计以服务端返回为准。
 - 样式只用简单 class（蒸汽模式 CSS 子集），不要写复杂后代选择器。
+
+完整规范见 [CONTRIBUTING.md](../CONTRIBUTING.md)；提交前运行 `..\scripts\check.ps1 -Frontend`（需要 HBuilderX 已启动）。

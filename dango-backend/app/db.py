@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import re
 import sqlite3
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator, Sequence
+from typing import Any
 
 # 系统分类的归属用户。系统分类对所有用户只读。
 SYSTEM_USER_ID = "__system__"
@@ -206,15 +207,11 @@ class Database:
         finally:
             conn.close()
 
-    def fetchone(
-        self, sql: str, params: Sequence[Any] = ()
-    ) -> sqlite3.Row | None:
+    def fetchone(self, sql: str, params: Sequence[Any] = ()) -> sqlite3.Row | None:
         with self.connection() as conn:
             return conn.execute(sql, params).fetchone()
 
-    def fetchall(
-        self, sql: str, params: Sequence[Any] = ()
-    ) -> list[sqlite3.Row]:
+    def fetchall(self, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
         with self.connection() as conn:
             return conn.execute(sql, params).fetchall()
 

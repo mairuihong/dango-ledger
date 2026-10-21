@@ -64,6 +64,17 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
+开发/提交前检查（Ruff + pytest）：
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m ruff format .
+python -m ruff check --fix .
+python -m pytest tests -q
+```
+
+代码风格与提交规范见仓库根目录 [CONTRIBUTING.md](../CONTRIBUTING.md)；Ruff 配置在 `pyproject.toml`。
+
 ```bash
 # macOS / Linux
 cd dango-backend

@@ -1,4 +1,4 @@
-﻿# 🍡 Dango Ledger · 团子账本
+# 🍡 Dango Ledger · 团子账本
 
 在线账本：所有平台的数据都走 HTTP 接口，服务端 SQLite 是唯一数据源；前端不落盘、不做离线同步。
 
@@ -8,6 +8,8 @@
 dango-ledger/
 ├── dango-backend/       Python + FastAPI + SQLite（CRUD / 统计 / 预算）
 ├── dango-frontend/      uni-app x 蒸汽模式（HBuilderX 项目根目录）
+├── scripts/check.ps1    后端格式/lint/测试 + 可选前端编译
+├── CONTRIBUTING.md      代码规范 / 提交规范
 └── README.md
 ```
 
@@ -46,6 +48,18 @@ npm install
 |---|---|
 | H5 | `http://127.0.0.1:8000` |
 | 小程序 / 真机 | `http://<电脑局域网IP>:8000` |
+
+## 开发规范
+
+- 代码风格、提交信息、接口约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 后端统一 Ruff（`pyproject.toml`）；提交前跑：
+
+```powershell
+.\scripts\check.cmd             # ruff format/check + pytest
+.\scripts\check.cmd -Frontend   # 再加 HBuilderX Web 编译（需 HBuilderX 已启动）
+```
+
+- 前端为 uni-app x 蒸汽模式：样式只用简单 class（BEM），数据只走 Pinia → API，不落本地存储，更新接口用 PUT。
 
 ## 命名
 

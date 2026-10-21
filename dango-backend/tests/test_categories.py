@@ -49,24 +49,18 @@ def test_create_custom_category(client: TestClient) -> None:
 def test_delete_custom_category_tombstone(client: TestClient, db) -> None:
     token = register(client)["token"]
     category = create_category(client, token, "临时分类")
-    response = client.delete(
-        f"/api/categories/{category['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/categories/{category['id']}", headers=auth_headers(token))
     assert response.status_code == 200
     assert all(item["id"] != category["id"] for item in list_categories(client, token))
 
-    row = db.fetchone(
-        "SELECT deleted_at FROM categories WHERE id = ?", (category["id"],)
-    )
+    row = db.fetchone("SELECT deleted_at FROM categories WHERE id = ?", (category["id"],))
     assert row is not None and row["deleted_at"]
 
 
 def test_system_category_cannot_be_deleted(client: TestClient) -> None:
     token = register(client)["token"]
     category = find_category(client, token, "餐饮", "expense")
-    response = client.delete(
-        f"/api/categories/{category['id']}", headers=auth_headers(token)
-    )
+    response = client.delete(f"/api/categories/{category['id']}", headers=auth_headers(token))
     assert response.status_code == 403
     assert "系统分类" in response.json()["detail"]
 
@@ -79,9 +73,7 @@ def test_custom_categories_are_isolated(client: TestClient) -> None:
     bob_categories = list_categories(client, bob)
     assert all(item["id"] != category["id"] for item in bob_categories)
 
-    delete = client.delete(
-        f"/api/categories/{category['id']}", headers=auth_headers(bob)
-    )
+    delete = client.delete(f"/api/categories/{category['id']}", headers=auth_headers(bob))
     assert delete.status_code == 404
 
     assert find_category(client, alice, "Alice 专属")["id"] == category["id"]

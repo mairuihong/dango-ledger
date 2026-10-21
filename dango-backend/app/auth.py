@@ -22,13 +22,8 @@ def hash_password(password: str) -> str:
     """PBKDF2-HMAC-SHA256，格式：算法$迭代次数$盐$摘要。"""
 
     salt = os.urandom(16)
-    digest = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS
-    )
-    return (
-        f"{PBKDF2_ALGORITHM}${PBKDF2_ITERATIONS}$"
-        f"{salt.hex()}${digest.hex()}"
-    )
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    return f"{PBKDF2_ALGORITHM}${PBKDF2_ITERATIONS}${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, encoded: str) -> bool:
@@ -44,9 +39,7 @@ def verify_password(password: str, encoded: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-    actual = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, iterations
-    )
+    actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
     return hmac.compare_digest(actual, expected)
 
 

@@ -31,9 +31,7 @@ def test_register_returns_token_and_user(client: TestClient) -> None:
 
 def test_password_is_hashed(client: TestClient, db) -> None:
     register(client, "hash-user", "secret123")
-    row = db.fetchone(
-        "SELECT password_hash FROM users WHERE username = ?", ("hash-user",)
-    )
+    row = db.fetchone("SELECT password_hash FROM users WHERE username = ?", ("hash-user",))
     assert row is not None
     assert "secret123" not in row["password_hash"]
     assert row["password_hash"].startswith("pbkdf2_sha256$")
