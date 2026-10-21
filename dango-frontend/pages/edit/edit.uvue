@@ -172,6 +172,10 @@
 			uni.showToast({ title: '请先登录', icon: 'none' })
 			return
 		}
+		if (ledger.accounts.length == 0) {
+			uni.showToast({ title: '请先到账户页添加账户', icon: 'none' })
+			return
+		}
 		saving.value = true
 		try {
 			const cents = yuanToCents(amount.value)
