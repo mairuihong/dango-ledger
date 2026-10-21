@@ -1,0 +1,144 @@
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import { api } from '@/services/api.uts'
+
+export const useLedgerStore = defineStore('ledger', () => {
+	const accounts = ref<any[]>([])
+	const totalBalance = ref(0)
+	const categories = ref<any[]>([])
+	const transactions = ref<any[]>([])
+	const total = ref(0)
+	const page = ref(1)
+	const pageSize = ref(20)
+	const loading = ref(false)
+
+	async function loadAccounts(): Promise<void> {
+		const data = await api.accounts.list()
+		accounts.value = data.items
+		totalBalance.value = data.total_balance
+	}
+
+	async function loadCategories(): Promise<void> {
+		const data = await api.categories.list()
+		categories.value = data as any[]
+	}
+
+	async function loadTransactions(month: string = '', keyword: string = '', targetPage: number = 1): Promise<void> {
+		loading.value = true
+		try {
+			const data = await api.transactions.list(month, keyword, targetPage, pageSize.value)
+			transactions.value = data.items
+			total.value = data.total
+			page.value = data.page
+		} finally {
+			loading.value = false
+		}
+	}
+
+	async function loadMore(month: string = '', keyword: string = ''): Promise<void> {
+		const nextPage = page.value + 1
+		const data = await api.transactions.list(month, keyword, nextPage, pageSize.value)
+		transactions.value = transactions.value.concat(data.items)
+		total.value = data.total
+		page.value = data.page
+	}
+
+	async function createTransaction(payload: any): Promise<void> {
+		await api.transactions.create(payload)
+		await loadAccounts()
+	}
+
+	async function updateTransaction(id: string, payload: any): Promise<void> {
+		await api.transactions.update(id, payload)
+		await loadAccounts()
+	}
+
+	async function removeTransaction(id: string): Promise<void> {
+		await api.transactions.remove(id)
+		await loadAccounts()
+	}
+
+	async function createAccount(name: string, type: string, initialBalance: number): Promise<void> {
+		await api.accounts.create(name, type, initialBalance)
+		await loadAccounts()
+	}
+
+	async function updateAccount(id: string, payload: any): Promise<void> {
+		await api.accounts.update(id, payload)
+		await loadAccounts()
+	}
+
+	async function removeAccount(id: string): Promise<void> {
+		await api.accounts.remove(id)
+		await loadAccounts()
+	}
+
+	async function recalcAccounts(): Promise<void> {
+		await api.accounts.recalc()
+		await loadAccounts()
+	}
+
+	async function createCategory(name: string, kind: string, icon: string): Promise<void> {
+		await api.categories.create(name, kind, icon)
+		await loadCategories()
+	}
+
+	async function removeCategory(id: string): Promise<void> {
+		await api.categories.remove(id)
+		await loadCategories()
+	}
+
+	function categoryName(id: string | null): string {
+		if (id == null) return '未分类'
+		for (let index = 0; index < categories.value.length; index++) {
+			const item = categories.value[index]
+			if (item.id == id) return item.name
+		}
+		return '未分类'
+	}
+
+	function categoryIcon(id: string | null): string {
+		if (id == null) return '🍡'
+		for (let index = 0; index < categories.value.length; index++) {
+			const item = categories.value[index]
+			if (item.id == id) return item.icon
+		}
+		return '🍡'
+	}
+
+	function accountName(id: string | null): string {
+		if (id == null) return ''
+		for (let index = 0; index < accounts.value.length; index++) {
+			const item = accounts.value[index]
+			if (item.id == id) return item.name
+		}
+		return ''
+	}
+
+	return {
+		accounts,
+		totalBalance,
+		categories,
+		transactions,
+		total,
+		page,
+		pageSize,
+		loading,
+		loadAccounts,
+		loadCategories,
+		loadTransactions,
+		loadMore,
+		createTransaction,
+		updateTransaction,
+		removeTransaction,
+		createAccount,
+		updateAccount,
+		removeAccount,
+		recalcAccounts,
+		createCategory,
+		removeCategory,
+		categoryName,
+		categoryIcon,
+		accountName
+	}
+})

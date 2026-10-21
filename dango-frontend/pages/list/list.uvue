@@ -1,0 +1,262 @@
+<template>
+	<view class="dango-page">
+		<view class="search-row">
+			<input class="search-input" v-model="keyword" placeholder="搜索备注 / 分类" confirm-type="search" @confirm="reload" />
+			<button class="search-btn" size="mini" @click="reload">搜索</button>
+		</view>
+
+		<scroll-view class="month-row" scroll-x="true">
+			<view class="month-chip" :class="{ active: month === '' }" @click="pickMonth('')">全部</view>
+			<view v-for="item in months" :key="item" class="month-chip" :class="{ active: month === item }" @click="pickMonth(item)">
+				{{ item }}
+			</view>
+		</scroll-view>
+
+		<view v-if="groups.length === 0 && !ledger.loading" class="dango-card empty">
+			{{ keyword === '' ? '这个月还没有记录' : '没有找到匹配的记录' }}
+		</view>
+
+		<view v-for="group in groups" :key="group.date" class="group">
+			<view class="group-head">
+				<text class="dango-muted">{{ group.date }}</text>
+				<text class="dango-muted">支出 {{ formatCents(group.expense) }}</text>
+			</view>
+			<view class="dango-card group-card">
+				<view v-for="tx in group.items" :key="tx.id" class="tx-row" @click="goEdit(tx.id)" @longpress="confirmDelete(tx)">
+					<view class="tx-main">
+						<text class="tx-title">{{ title(tx) }}</text>
+						<text class="dango-muted">{{ tx.note === '' ? tx.account_name : tx.note }}</text>
+					</view>
+					<text :class="amountClass(tx)">{{ amountText(tx) }}</text>
+				</view>
+			</view>
+		</view>
+
+		<button v-if="ledger.transactions.length < ledger.total" class="more" :disabled="ledger.loading" @click="loadMore">
+			{{ ledger.loading ? '加载中…' : '加载更多' }}
+		</button>
+		<view v-else-if="ledger.transactions.length > 0" class="dango-muted more-tip">已经到底了</view>
+
+		<view class="fab" @click="goEdit('')">＋</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { computed, ref } from 'vue'
+	import { useAuthStore } from '@/stores/auth.uts'
+	import { useLedgerStore } from '@/stores/ledger.uts'
+	import { formatCents } from '@/utils/money.uts'
+	import { localMonth, recentMonths } from '@/utils/date.uts'
+
+	const auth = useAuthStore()
+	const ledger = useLedgerStore()
+	const keyword = ref('')
+	const month = ref(localMonth())
+	const months = recentMonths(6)
+
+	const groups = computed((): any[] => {
+		const result: any[] = []
+		let current: any = null
+		for (let index = 0; index < ledger.transactions.length; index++) {
+			const tx = ledger.transactions[index]
+			const date = tx.occurred_at.slice(0, 10)
+			if (current == null || current.date != date) {
+				current = { date: date, items: [], expense: 0 }
+				result.push(current)
+			}
+			current.items.push(tx)
+			if (tx.type == 'expense') {
+				current.expense += tx.amount
+			}
+		}
+		return result
+	})
+
+	async function reload(): Promise<void> {
+		if (!auth.loggedIn) {
+			uni.showToast({ title: '请先登录', icon: 'none' })
+			return
+		}
+		try {
+			await ledger.loadTransactions(month.value, keyword.value, 1)
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	async function loadMore(): Promise<void> {
+		try {
+			await ledger.loadMore(month.value, keyword.value)
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	function pickMonth(value: string): void {
+		month.value = value
+		reload()
+	}
+
+	onPageShow(() => {
+		if (auth.loggedIn && ledger.transactions.length === 0) {
+			reload()
+		}
+	})
+
+	function title(tx: any): string {
+		if (tx.type == 'transfer') return '转账'
+		return tx.category_name != null ? tx.category_name : '未分类'
+	}
+
+	function amountText(tx: any): string {
+		const sign = tx.type == 'income' ? '+' : '-'
+		return sign + formatCents(tx.amount)
+	}
+
+	function amountClass(tx: any): string {
+		return tx.type == 'income' ? 'tx-amount dango-income' : 'tx-amount dango-expense'
+	}
+
+	function goEdit(id: string): void {
+		uni.navigateTo({ url: id === '' ? '/pages/edit/edit' : '/pages/edit/edit?id=' + id })
+	}
+
+	function confirmDelete(tx: any): void {
+		uni.showModal({
+			title: '删除这笔记录？',
+			content: '删除后服务端会同步冲销余额',
+			success: (result: any) => {
+				if (!result.confirm) return
+				deleteTransaction(tx.id)
+			}
+		})
+	}
+
+	async function deleteTransaction(id: string): Promise<void> {
+		try {
+			await ledger.removeTransaction(id)
+			await reload()
+			uni.showToast({ title: '已删除', icon: 'success' })
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+</script>
+
+<style>
+	.search-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.search-input {
+		flex: 1;
+		height: 72rpx;
+		background-color: #ffffff;
+		border-radius: 36rpx;
+		padding-left: 28rpx;
+		padding-right: 28rpx;
+		font-size: 26rpx;
+	}
+
+	.search-btn {
+		margin-left: 16rpx;
+		background-color: #ff8a65;
+		color: #ffffff;
+	}
+
+	.month-row {
+		white-space: nowrap;
+		margin-top: 20rpx;
+		margin-bottom: 8rpx;
+	}
+
+	.month-chip {
+		display: inline-block;
+		padding: 10rpx 24rpx;
+		margin-right: 12rpx;
+		border-radius: 28rpx;
+		background-color: #ffffff;
+		color: #606266;
+		font-size: 24rpx;
+	}
+
+	.month-chip.active {
+		background-color: #ff8a65;
+		color: #ffffff;
+	}
+
+	.group {
+		margin-top: 20rpx;
+	}
+
+	.group-head {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		padding: 0 8rpx 10rpx;
+	}
+
+	.group-card {
+		padding-top: 4rpx;
+		padding-bottom: 4rpx;
+	}
+
+	.tx-row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		padding: 18rpx 0;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.tx-main {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.tx-title {
+		font-size: 28rpx;
+	}
+
+	.tx-amount {
+		font-size: 30rpx;
+		font-weight: 600;
+	}
+
+	.empty {
+		text-align: center;
+		color: #909399;
+		margin-top: 24rpx;
+	}
+
+	.more {
+		margin-top: 20rpx;
+		background-color: #ffffff;
+		color: #606266;
+		font-size: 26rpx;
+	}
+
+	.more-tip {
+		text-align: center;
+		margin-top: 20rpx;
+	}
+
+	.fab {
+		position: fixed;
+		right: 40rpx;
+		bottom: 60rpx;
+		width: 96rpx;
+		height: 96rpx;
+		border-radius: 48rpx;
+		background-color: #ff8a65;
+		color: #ffffff;
+		font-size: 48rpx;
+		text-align: center;
+		line-height: 96rpx;
+	}
+</style>

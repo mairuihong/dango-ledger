@@ -1,0 +1,9 @@
+{
+  "name": "dango-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dango Ledger frontend (uni-app x vapor)",
+  "dependencies": {
+    "pinia": "^2.3.1"
+  }
+}

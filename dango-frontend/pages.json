@@ -1,0 +1,50 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": { "navigationBarTitleText": "团子账本" }
+		},
+		{
+			"path": "pages/list/list",
+			"style": { "navigationBarTitleText": "明细" }
+		},
+		{
+			"path": "pages/stats/stats",
+			"style": { "navigationBarTitleText": "统计" }
+		},
+		{
+			"path": "pages/mine/mine",
+			"style": { "navigationBarTitleText": "我的" }
+		},
+		{
+			"path": "pages/edit/edit",
+			"style": { "navigationBarTitleText": "记一笔" }
+		},
+		{
+			"path": "pages/accounts/accounts",
+			"style": { "navigationBarTitleText": "账户" }
+		},
+		{
+			"path": "pages/categories/categories",
+			"style": { "navigationBarTitleText": "分类" }
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "团子账本",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#F7F8FA"
+	},
+	"tabBar": {
+		"color": "#909399",
+		"selectedColor": "#FF8A65",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"list": [
+			{ "pagePath": "pages/index/index", "text": "首页" },
+			{ "pagePath": "pages/list/list", "text": "明细" },
+			{ "pagePath": "pages/stats/stats", "text": "统计" },
+			{ "pagePath": "pages/mine/mine", "text": "我的" }
+		]
+	}
+}

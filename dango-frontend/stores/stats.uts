@@ -1,0 +1,22 @@
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import { api } from '@/services/api.uts'
+
+export const useStatsStore = defineStore('stats', () => {
+	const overview = ref<any>(null)
+	const trend = ref<any[]>([])
+	const loading = ref(false)
+
+	async function load(month: string): Promise<void> {
+		loading.value = true
+		try {
+			overview.value = await api.stats.overview(month)
+			const data = await api.stats.trend(6)
+			trend.value = data.items
+		} finally {
+			loading.value = false
+		}
+	}
+
+	return { overview, trend, loading, load }
+})

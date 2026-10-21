@@ -1,0 +1,42 @@
+<script setup lang="uts">
+	onLaunch(() => {
+		console.log('Dango Ledger launch')
+	})
+</script>
+
+<style>
+	page {
+		background-color: #f7f8fa;
+		color: #303133;
+		font-size: 28rpx;
+	}
+
+	.dango-page {
+		padding: 24rpx 32rpx;
+	}
+
+	.dango-card {
+		background-color: #ffffff;
+		border-radius: 20rpx;
+		padding: 28rpx;
+		margin-bottom: 24rpx;
+	}
+
+	.dango-title {
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.dango-muted {
+		color: #909399;
+		font-size: 24rpx;
+	}
+
+	.dango-income {
+		color: #67c23a;
+	}
+
+	.dango-expense {
+		color: #f56c6c;
+	}
+</style>

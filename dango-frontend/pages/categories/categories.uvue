@@ -1,0 +1,180 @@
+<template>
+	<view class="dango-page">
+		<view class="tabs">
+			<view class="tab" :class="{ active: kind === 'expense' }" @click="kind = 'expense'">支出分类</view>
+			<view class="tab" :class="{ active: kind === 'income' }" @click="kind = 'income'">收入分类</view>
+		</view>
+
+		<view class="dango-card">
+			<view v-for="item in list" :key="item.id" class="row">
+				<text class="name">{{ item.icon }} {{ item.name }}</text>
+				<text v-if="item.is_system" class="dango-muted">系统</text>
+				<text v-else class="delete" @click="confirmDelete(item)">删除</text>
+			</view>
+			<view v-if="list.length === 0" class="empty">暂无分类</view>
+		</view>
+
+		<view class="dango-card">
+			<text class="dango-title">添加{{ kind === 'expense' ? '支出' : '收入' }}分类</text>
+			<view class="field">
+				<text class="label">名称</text>
+				<input class="input" v-model="name" placeholder="分类名称" />
+			</view>
+			<view class="field">
+				<text class="label">图标</text>
+				<input class="input" v-model="icon" placeholder="emoji，如 🍜" />
+			</view>
+			<button class="primary" @click="add">添加分类</button>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { computed, ref } from 'vue'
+	import { useAuthStore } from '@/stores/auth.uts'
+	import { useLedgerStore } from '@/stores/ledger.uts'
+
+	const auth = useAuthStore()
+	const ledger = useLedgerStore()
+	const kind = ref('expense')
+	const name = ref('')
+	const icon = ref('')
+
+	const list = computed((): any[] => {
+		const result: any[] = []
+		for (let index = 0; index < ledger.categories.length; index++) {
+			const item = ledger.categories[index]
+			if (item.kind == kind.value) result.push(item)
+		}
+		return result
+	})
+
+	onPageShow(() => {
+		load()
+	})
+
+	async function load(): Promise<void> {
+		if (!auth.loggedIn) return
+		try {
+			await ledger.loadCategories()
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	async function add(): Promise<void> {
+		if (name.value.trim() === '') {
+			uni.showToast({ title: '请输入分类名称', icon: 'none' })
+			return
+		}
+		try {
+			await ledger.createCategory(name.value.trim(), kind.value, icon.value.trim() === '' ? '🍡' : icon.value.trim())
+			name.value = ''
+			icon.value = ''
+			uni.showToast({ title: '已添加', icon: 'success' })
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	function confirmDelete(item: any): void {
+		uni.showModal({
+			title: '删除分类？',
+			content: '使用该分类的流水会显示未分类',
+			success: (result: any) => {
+				if (!result.confirm) return
+				deleteCategory(item.id)
+			}
+		})
+	}
+
+	async function deleteCategory(id: string): Promise<void> {
+		try {
+			await ledger.removeCategory(id)
+			uni.showToast({ title: '已删除', icon: 'success' })
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+</script>
+
+<style>
+	.tabs {
+		display: flex;
+		flex-direction: row;
+		background-color: #ffffff;
+		border-radius: 20rpx;
+		padding: 8rpx;
+		margin-bottom: 24rpx;
+	}
+
+	.tab {
+		flex: 1;
+		text-align: center;
+		padding: 16rpx 0;
+		border-radius: 12rpx;
+		color: #606266;
+		font-size: 28rpx;
+	}
+
+	.tab.active {
+		background-color: #ff8a65;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		min-height: 84rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.name {
+		font-size: 28rpx;
+	}
+
+	.delete {
+		color: #f56c6c;
+		font-size: 24rpx;
+	}
+
+	.empty {
+		text-align: center;
+		color: #909399;
+		padding: 30rpx 0;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		min-height: 92rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.label {
+		width: 120rpx;
+		color: #606266;
+		font-size: 28rpx;
+	}
+
+	.input {
+		flex: 1;
+		text-align: right;
+		font-size: 28rpx;
+	}
+
+	.primary {
+		margin-top: 24rpx;
+		background-color: #ff8a65;
+		color: #ffffff;
+		border-radius: 12rpx;
+	}
+</style>

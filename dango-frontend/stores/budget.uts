@@ -1,0 +1,22 @@
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import { api } from '@/services/api.uts'
+
+export const useBudgetStore = defineStore('budget', () => {
+	const month = ref('')
+	const amount = ref(0)
+
+	async function load(targetMonth: string): Promise<void> {
+		const data = await api.budgets.get(targetMonth)
+		month.value = data.month
+		amount.value = data.amount
+	}
+
+	async function save(targetMonth: string, cents: number): Promise<void> {
+		const data = await api.budgets.set(targetMonth, cents)
+		month.value = data.month
+		amount.value = data.amount
+	}
+
+	return { month, amount, load, save }
+})

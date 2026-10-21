@@ -1,0 +1,34 @@
+import { computed, ref } from 'vue'
+import { defineStore } from 'pinia'
+import { api } from '@/services/api.uts'
+
+export const useAuthStore = defineStore('auth', () => {
+	const token = ref('')
+	const user = ref<any>(null)
+	const loggedIn = computed(() => token.value != '')
+
+	async function login(username: string, password: string): Promise<void> {
+		const data = await api.auth.login(username, password)
+		token.value = data.token.toString()
+		user.value = data.user
+	}
+
+	async function register(username: string, password: string): Promise<void> {
+		const data = await api.auth.register(username, password)
+		token.value = data.token.toString()
+		user.value = data.user
+	}
+
+	async function devLogin(username: string = 'dango'): Promise<void> {
+		const data = await api.auth.devToken(username)
+		token.value = data.token.toString()
+		user.value = data.user
+	}
+
+	function logout(): void {
+		token.value = ''
+		user.value = null
+	}
+
+	return { token, user, loggedIn, login, register, devLogin, logout }
+})

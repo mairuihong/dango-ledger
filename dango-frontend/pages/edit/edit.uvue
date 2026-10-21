@@ -1,0 +1,274 @@
+<template>
+	<view class="dango-page">
+		<view v-if="editId === ''" class="tabs">
+			<view class="tab" :class="{ active: type === 'expense' }" @click="type = 'expense'">支出</view>
+			<view class="tab" :class="{ active: type === 'income' }" @click="type = 'income'">收入</view>
+			<view class="tab" :class="{ active: type === 'transfer' }" @click="type = 'transfer'">转账</view>
+		</view>
+		<view v-else class="dango-card">
+			<text class="dango-muted">编辑记录</text>
+		</view>
+
+		<view class="dango-card">
+			<view class="field">
+				<text class="label">金额</text>
+				<input class="amount-input" v-model="amount" type="digit" placeholder="0.00" />
+			</view>
+
+			<view v-if="editId === ''" class="field">
+				<text class="label">{{ type === 'transfer' ? '转出账户' : '账户' }}</text>
+				<picker :range="accountNames" :value="accountIndex" @change="onAccountChange">
+					<view class="picker">{{ accountNames.length > 0 ? accountNames[accountIndex] : '请选择账户' }}</view>
+				</picker>
+			</view>
+			<view v-else class="field">
+				<text class="label">账户</text>
+				<text class="value">{{ accountNames.length > 0 ? accountNames[accountIndex] : '—' }}</text>
+			</view>
+
+			<view v-if="type === 'transfer' && editId === ''" class="field">
+				<text class="label">转入账户</text>
+				<picker :range="accountNames" :value="toIndex" @change="onToAccountChange">
+					<view class="picker">{{ toIndex >= 0 ? accountNames[toIndex] : '请选择转入账户' }}</view>
+				</picker>
+			</view>
+
+			<view v-if="type !== 'transfer'" class="field">
+				<text class="label">分类</text>
+				<picker :range="categoryNames" :value="categoryIndex" @change="onCategoryChange">
+					<view class="picker">{{ categoryIndex >= 0 ? categoryNames[categoryIndex] : '请选择分类' }}</view>
+				</picker>
+			</view>
+
+			<view class="field">
+				<text class="label">日期</text>
+				<picker mode="date" :value="date" @change="onDateChange">
+					<view class="picker">{{ date }}</view>
+				</picker>
+			</view>
+
+			<view class="field">
+				<text class="label">备注</text>
+				<input class="note-input" v-model="note" placeholder="选填" />
+			</view>
+		</view>
+
+		<button class="save" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存' }}</button>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { computed, ref } from 'vue'
+	import { api } from '@/services/api.uts'
+	import { useAuthStore } from '@/stores/auth.uts'
+	import { useLedgerStore } from '@/stores/ledger.uts'
+	import { centsToInput, yuanToCents } from '@/utils/money.uts'
+	import { localDate, localNoonIso } from '@/utils/date.uts'
+
+	const auth = useAuthStore()
+	const ledger = useLedgerStore()
+	const editId = ref('')
+	const type = ref('expense')
+	const amount = ref('')
+	const accountIndex = ref(0)
+	const toIndex = ref(-1)
+	const categoryIndex = ref(-1)
+	const date = ref(localDate())
+	const note = ref('')
+	const saving = ref(false)
+
+	const accountNames = computed((): string[] => {
+		const result: string[] = []
+		for (let index = 0; index < ledger.accounts.length; index++) {
+			const item = ledger.accounts[index]
+			result.push(item.name + '（' + (item.balance / 100).toFixed(2) + '）')
+		}
+		return result
+	})
+
+	const categoryList = computed((): any[] => {
+		const kind = type.value == 'income' ? 'income' : 'expense'
+		const result: any[] = []
+		for (let index = 0; index < ledger.categories.length; index++) {
+			const item = ledger.categories[index]
+			if (item.kind == kind) result.push(item)
+		}
+		return result
+	})
+
+	const categoryNames = computed((): string[] => {
+		const result: string[] = []
+		for (let index = 0; index < categoryList.value.length; index++) {
+			const item = categoryList.value[index]
+			result.push(item.icon + ' ' + item.name)
+		}
+		return result
+	})
+
+	onLoad((options: any) => {
+		if (options != null && options.id != null) {
+			editId.value = options.id.toString()
+		}
+		init()
+	})
+
+	async function init(): Promise<void> {
+		if (!auth.loggedIn) {
+			uni.showToast({ title: '请先登录', icon: 'none' })
+			return
+		}
+		try {
+			await ledger.loadAccounts()
+			await ledger.loadCategories()
+			if (editId.value !== '') {
+				await loadForEdit()
+			}
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	async function loadForEdit(): Promise<void> {
+		const data = await api.transactions.list('', '', 1, 200)
+		const items = data.items as any[]
+		for (let index = 0; index < items.length; index++) {
+			const item = items[index]
+			if (item.id == editId.value) {
+				type.value = item.type
+				amount.value = centsToInput(item.amount)
+				date.value = item.occurred_at.slice(0, 10)
+				note.value = item.note
+				for (let i = 0; i < ledger.accounts.length; i++) {
+					if (ledger.accounts[i].id == item.account_id) accountIndex.value = i
+				}
+				for (let i = 0; i < categoryList.value.length; i++) {
+					if (categoryList.value[i].id == item.category_id) categoryIndex.value = i
+				}
+				return
+			}
+		}
+		uni.showToast({ title: '记录不存在', icon: 'none' })
+	}
+
+	function onAccountChange(event: any): void {
+		accountIndex.value = Number(event.detail.value)
+	}
+
+	function onToAccountChange(event: any): void {
+		toIndex.value = Number(event.detail.value)
+	}
+
+	function onCategoryChange(event: any): void {
+		categoryIndex.value = Number(event.detail.value)
+	}
+
+	function onDateChange(event: any): void {
+		date.value = event.detail.value.toString()
+	}
+
+	async function save(): Promise<void> {
+		if (saving.value) return
+		if (!auth.loggedIn) {
+			uni.showToast({ title: '请先登录', icon: 'none' })
+			return
+		}
+		saving.value = true
+		try {
+			const cents = yuanToCents(amount.value)
+			const payload: any = {
+				amount: cents,
+				category_id: type.value == 'transfer' ? null : (categoryIndex.value >= 0 ? categoryList.value[categoryIndex.value].id : null),
+				occurred_at: localNoonIso(date.value),
+				note: note.value
+			}
+			if (editId.value !== '') {
+				await api.transactions.update(editId.value, payload)
+			} else {
+				payload.type = type.value
+				payload.account_id = ledger.accounts[accountIndex.value].id
+				payload.to_account_id = type.value == 'transfer' && toIndex.value >= 0 ? ledger.accounts[toIndex.value].id : null
+				await api.transactions.create(payload)
+			}
+			await ledger.loadAccounts()
+			uni.showToast({ title: '已保存', icon: 'success' })
+			setTimeout(() => uni.navigateBack(), 300)
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		} finally {
+			saving.value = false
+		}
+	}
+</script>
+
+<style>
+	.tabs {
+		display: flex;
+		flex-direction: row;
+		background-color: #ffffff;
+		border-radius: 20rpx;
+		padding: 8rpx;
+		margin-bottom: 24rpx;
+	}
+
+	.tab {
+		flex: 1;
+		text-align: center;
+		padding: 16rpx 0;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		color: #606266;
+	}
+
+	.tab.active {
+		background-color: #ff8a65;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		min-height: 92rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.label {
+		color: #606266;
+		font-size: 28rpx;
+	}
+
+	.value {
+		color: #303133;
+		font-size: 28rpx;
+	}
+
+	.amount-input {
+		flex: 1;
+		text-align: right;
+		font-size: 40rpx;
+		font-weight: 600;
+	}
+
+	.note-input {
+		flex: 1;
+		text-align: right;
+		font-size: 28rpx;
+	}
+
+	.picker {
+		color: #303133;
+		font-size: 28rpx;
+	}
+
+	.save {
+		margin-top: 32rpx;
+		background-color: #ff8a65;
+		color: #ffffff;
+		border-radius: 16rpx;
+		font-size: 30rpx;
+	}
+</style>

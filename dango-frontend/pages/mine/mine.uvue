@@ -1,0 +1,141 @@
+<template>
+	<view class="dango-page">
+		<view v-if="!auth.loggedIn" class="dango-card">
+			<text class="dango-title">登录 / 注册</text>
+			<view class="field">
+				<text class="label">用户名</text>
+				<input class="input" v-model="username" placeholder="至少 1 位" />
+			</view>
+			<view class="field">
+				<text class="label">密码</text>
+				<input class="input" v-model="password" password placeholder="至少 6 位" />
+			</view>
+			<button class="primary" :disabled="busy" @click="login">{{ busy ? '请稍候…' : '登录' }}</button>
+			<button class="secondary" :disabled="busy" @click="register">注册</button>
+			<text class="dango-muted tip">所有数据都保存在服务端，换设备登录即可看到同一本账。</text>
+		</view>
+
+		<view v-else class="dango-card">
+			<text class="dango-title">{{ auth.user != null ? auth.user.username : '' }}</text>
+			<text class="dango-muted">已登录（token 仅保存在内存）</text>
+			<view class="row" @click="goAccounts">
+				<text>账户管理</text>
+				<text class="arrow">›</text>
+			</view>
+			<view class="row" @click="goCategories">
+				<text>分类管理</text>
+				<text class="arrow">›</text>
+			</view>
+			<button class="secondary" @click="logout">退出登录</button>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { ref } from 'vue'
+	import { useAuthStore } from '@/stores/auth.uts'
+
+	const auth = useAuthStore()
+	const username = ref('')
+	const password = ref('')
+	const busy = ref(false)
+
+	async function login(): Promise<void> {
+		if (busy.value) return
+		busy.value = true
+		try {
+			await auth.login(username.value.trim(), password.value)
+			uni.showToast({ title: '登录成功', icon: 'success' })
+			uni.switchTab({ url: '/pages/index/index' })
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		} finally {
+			busy.value = false
+		}
+	}
+
+	async function register(): Promise<void> {
+		if (busy.value) return
+		busy.value = true
+		try {
+			await auth.register(username.value.trim(), password.value)
+			uni.showToast({ title: '注册成功', icon: 'success' })
+			uni.switchTab({ url: '/pages/index/index' })
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		} finally {
+			busy.value = false
+		}
+	}
+
+	function logout(): void {
+		auth.logout()
+		uni.showToast({ title: '已退出', icon: 'none' })
+	}
+
+	function goAccounts(): void {
+		uni.navigateTo({ url: '/pages/accounts/accounts' })
+	}
+
+	function goCategories(): void {
+		uni.navigateTo({ url: '/pages/categories/categories' })
+	}
+</script>
+
+<style>
+	.field {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		min-height: 92rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.label {
+		width: 140rpx;
+		color: #606266;
+		font-size: 28rpx;
+	}
+
+	.input {
+		flex: 1;
+		font-size: 28rpx;
+	}
+
+	.primary {
+		margin-top: 28rpx;
+		background-color: #ff8a65;
+		color: #ffffff;
+		border-radius: 12rpx;
+	}
+
+	.secondary {
+		margin-top: 16rpx;
+		background-color: #fff7f3;
+		color: #ff8a65;
+		border-radius: 12rpx;
+	}
+
+	.tip {
+		display: block;
+		margin-top: 20rpx;
+		line-height: 1.6;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		padding: 24rpx 0;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f2f3f5;
+	}
+
+	.arrow {
+		color: #c0c4cc;
+	}
+</style>

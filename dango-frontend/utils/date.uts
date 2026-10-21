@@ -1,0 +1,34 @@
+function pad(value: number): string {
+	return value < 10 ? '0' + value.toString() : value.toString()
+}
+
+/** YYYY-MM-DD（本地时区） */
+export function localDate(date: Date = new Date()): string {
+	return date.getFullYear().toString() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate())
+}
+
+/** YYYY-MM（本地时区） */
+export function localMonth(date: Date = new Date()): string {
+	return date.getFullYear().toString() + '-' + pad(date.getMonth() + 1)
+}
+
+/** 本地日期中午的 ISO 字符串，避免时区把日期推到前后一天 */
+export function localNoonIso(dateText: string): string {
+	const date = new Date(dateText + 'T12:00:00')
+	return date.toISOString()
+}
+
+export function todayIso(): string {
+	return localNoonIso(localDate())
+}
+
+/** 最近 N 个月的 YYYY-MM 列表，从旧到新 */
+export function recentMonths(count: number): string[] {
+	const result: string[] = []
+	const now = new Date()
+	for (let index = count - 1; index >= 0; index--) {
+		const date = new Date(now.getFullYear(), now.getMonth() - index, 1)
+		result.push(localMonth(date))
+	}
+	return result
+}

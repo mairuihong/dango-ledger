@@ -1,0 +1,158 @@
+import { API_BASE } from '@/config.uts'
+
+// token 只放内存，应用重启后需要重新登录（按「不用本地储存」的约束）
+let authToken = ''
+
+export function setAuthToken(token: string): void {
+	authToken = token
+}
+
+export function getAuthToken(): string {
+	return authToken
+}
+
+export function hasAuthToken(): boolean {
+	return authToken != ''
+}
+
+function buildQuery(params: any): string {
+	const parts: string[] = []
+	for (const key in params) {
+		const value = params[key]
+		if (value != null && value != '') {
+			parts.push(key + '=' + encodeURIComponent(value.toString()))
+		}
+	}
+	return parts.length > 0 ? '?' + parts.join('&') : ''
+}
+
+function request(method: string, path: string, data: any = null): Promise<any> {
+	return new Promise((resolve, reject) => {
+		const header: any = { 'Content-Type': 'application/json' }
+		if (authToken != '') {
+			header.Authorization = 'Bearer ' + authToken
+		}
+		uni.request({
+			url: API_BASE + path,
+			method: method as any,
+			data: data,
+			header: header,
+			success: (res: any) => {
+				const status = res.statusCode
+				if (status >= 200 && status < 300) {
+					resolve(res.data)
+					return
+				}
+				if (status == 401) {
+					authToken = ''
+				}
+				const body = res.data
+				let detail = '请求失败（' + status.toString() + '）'
+				if (body != null && body.detail != null) {
+					detail = body.detail.toString()
+				}
+				reject(new Error(detail))
+			},
+			fail: (error: any) => {
+				const message = error != null && error.errMsg != null ? error.errMsg : '网络错误，请检查接口地址'
+				reject(new Error(message))
+			}
+		})
+	})
+}
+
+export const api: any = {
+	auth: {
+		async register(username: string, password: string): Promise<any> {
+			const data = await request('POST', '/api/auth/register', { username: username, password: password })
+			setAuthToken(data.token.toString())
+			return data
+		},
+		async login(username: string, password: string): Promise<any> {
+			const data = await request('POST', '/api/auth/login', { username: username, password: password })
+			setAuthToken(data.token.toString())
+			return data
+		},
+		async me(): Promise<any> {
+			return await request('GET', '/api/auth/me')
+		},
+		async devToken(username: string = 'dango'): Promise<any> {
+			const data = await request('POST', '/api/auth/dev-token', { username: username })
+			setAuthToken(data.token.toString())
+			return data
+		}
+	},
+	accounts: {
+		async list(): Promise<any> {
+			return await request('GET', '/api/accounts')
+		},
+		async create(name: string, type: string, initialBalance: number): Promise<any> {
+			return await request('POST', '/api/accounts', {
+				name: name,
+				type: type,
+				initial_balance: initialBalance
+			})
+		},
+		async update(id: string, payload: any): Promise<any> {
+			return await request('PUT', '/api/accounts/' + id, payload)
+		},
+		async remove(id: string): Promise<any> {
+			return await request('DELETE', '/api/accounts/' + id)
+		},
+		async recalc(): Promise<any> {
+			return await request('POST', '/api/accounts/recalc')
+		}
+	},
+	categories: {
+		async list(): Promise<any> {
+			return await request('GET', '/api/categories')
+		},
+		async create(name: string, kind: string, icon: string, color: string = '#FF8A65'): Promise<any> {
+			return await request('POST', '/api/categories', {
+				name: name,
+				kind: kind,
+				icon: icon,
+				color: color
+			})
+		},
+		async remove(id: string): Promise<any> {
+			return await request('DELETE', '/api/categories/' + id)
+		}
+	},
+	transactions: {
+		async list(month: string, keyword: string, page: number, pageSize: number): Promise<any> {
+			const query = buildQuery({
+				month: month,
+				keyword: keyword,
+				page: page,
+				page_size: pageSize
+			})
+			return await request('GET', '/api/transactions' + query)
+		},
+		async create(payload: any): Promise<any> {
+			return await request('POST', '/api/transactions', payload)
+		},
+		async update(id: string, payload: any): Promise<any> {
+			return await request('PUT', '/api/transactions/' + id, payload)
+		},
+		async remove(id: string): Promise<any> {
+			return await request('DELETE', '/api/transactions/' + id)
+		}
+	},
+	budgets: {
+		async get(month: string): Promise<any> {
+			return await request('GET', '/api/budgets?month=' + month)
+		},
+		async set(month: string, amount: number): Promise<any> {
+			return await request('PUT', '/api/budgets', { month: month, amount: amount })
+		}
+	},
+	stats: {
+		async overview(month: string): Promise<any> {
+			return await request('GET', '/api/stats/overview?month=' + month)
+		},
+		async trend(months: number): Promise<any> {
+			return await request('GET', '/api/stats/monthly-trend?months=' + months.toString())
+		}
+	}
+}

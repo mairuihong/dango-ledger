@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+dango-backend/data/
+*.db
+*.db-wal
+*.db-shm
+
+# HBuilderX / uni-app x
+unpackage/
+.hbuilderx/
+node_modules/
+dist/
+*.log
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 构建产物
+*.zip
+*.apk
+*.ipa

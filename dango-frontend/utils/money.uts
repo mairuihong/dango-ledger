@@ -1,0 +1,26 @@
+/** 金额统一用整数「分」 */
+
+export function yuanToCents(input: string): number {
+	const text = input.trim()
+	if (text == '') {
+		throw new Error('请输入金额')
+	}
+	const value = parseFloat(text)
+	if (isNaN(value)) {
+		throw new Error('金额格式不正确')
+	}
+	return Math.round(value * 100)
+}
+
+export function centsToInput(cents: number): string {
+	const sign = cents < 0 ? '-' : ''
+	const abs = Math.abs(cents)
+	const yuan = Math.floor(abs / 100)
+	const fen = abs % 100
+	const fenText = fen < 10 ? '0' + fen.toString() : fen.toString()
+	return sign + yuan.toString() + '.' + fenText
+}
+
+export function formatCents(cents: number): string {
+	return '¥' + centsToInput(cents)
+}

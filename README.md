@@ -1,0 +1,52 @@
+﻿# 🍡 Dango Ledger · 团子账本
+
+在线账本：所有平台的数据都走 HTTP 接口，服务端 SQLite 是唯一数据源；前端不落盘、不做离线同步。
+
+## 结构
+
+```
+dango-ledger/
+├── dango-backend/       Python + FastAPI + SQLite（CRUD / 统计 / 预算）
+├── dango-frontend/      uni-app x 蒸汽模式（HBuilderX 项目根目录）
+└── README.md
+```
+
+## 技术栈
+
+- 后端：Python 3.10+ / FastAPI / Uvicorn / 标准库 sqlite3 / PyJWT / pytest
+- 前端：uni-app x 蒸汽模式、Vue3 组合式 API、Pinia、uni-ui x
+- 数据：全部走 `/api/*` 接口；前端无本地数据库、无业务数据缓存
+
+## 快速开始
+
+### 后端
+
+```bash
+cd dango-backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python run.py
+# http://127.0.0.1:8000/docs
+python -m pytest tests -v
+```
+
+### 前端
+
+用 HBuilderX 打开 `dango-frontend/`（uni-app x 项目），运行到 H5 / 微信小程序 / Android。
+
+```bash
+cd dango-frontend
+npm install
+```
+
+接口地址在 `dango-frontend/config.uts` 中配置：
+
+| 端 | API_BASE |
+|---|---|
+| H5 | `http://127.0.0.1:8000` |
+| 小程序 / 真机 | `http://<电脑局域网IP>:8000` |
+
+## 命名
+
+中文：团子账本；英文：Dango Ledger；代码前缀 `dango`；环境变量 `DANGO_*`；数据库 `dango.db`。
