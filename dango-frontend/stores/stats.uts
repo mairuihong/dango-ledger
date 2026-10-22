@@ -5,12 +5,24 @@ import { api } from '@/services/api.uts'
 export const useStatsStore = defineStore('stats', () => {
 	const overview = ref<any>(null)
 	const trend = ref<any[]>([])
+	const incomeItems = ref<any[]>([])
+	const incomeTotal = ref(0)
 	const loading = ref(false)
+
+	async function loadOverview(month: string): Promise<void> {
+		overview.value = await api.stats.overview(month)
+	}
+
+	async function loadIncome(month: string): Promise<void> {
+		const data = await api.stats.categories(month, 'income')
+		incomeItems.value = data.items
+		incomeTotal.value = data.total
+	}
 
 	async function load(month: string): Promise<void> {
 		loading.value = true
 		try {
-			overview.value = await api.stats.overview(month)
+			await loadOverview(month)
 			const data = await api.stats.trend(6)
 			trend.value = data.items
 		} finally {
@@ -18,5 +30,5 @@ export const useStatsStore = defineStore('stats', () => {
 		}
 	}
 
-	return { overview, trend, loading, load }
+	return { overview, trend, incomeItems, incomeTotal, loading, loadOverview, loadIncome, load }
 })

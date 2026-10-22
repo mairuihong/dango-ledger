@@ -6,11 +6,11 @@
 		},
 		{
 			"path": "pages/list/list",
-			"style": { "navigationBarTitleText": "明细" }
+			"style": { "navigationBarTitleText": "账单" }
 		},
 		{
 			"path": "pages/stats/stats",
-			"style": { "navigationBarTitleText": "统计" }
+			"style": { "navigationBarTitleText": "报表" }
 		},
 		{
 			"path": "pages/mine/mine",
@@ -22,29 +22,53 @@
 		},
 		{
 			"path": "pages/accounts/accounts",
-			"style": { "navigationBarTitleText": "账户" }
+			"style": { "navigationBarTitleText": "资产" }
 		},
 		{
 			"path": "pages/categories/categories",
 			"style": { "navigationBarTitleText": "分类" }
+		},
+		{
+			"path": "pages/calendar/calendar",
+			"style": { "navigationBarTitleText": "账单日历" }
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "团子账本",
-		"navigationBarBackgroundColor": "#FFFFFF",
-		"backgroundColor": "#F7F8FA"
+		"navigationBarBackgroundColor": "#F4F7EF",
+		"backgroundColor": "#F4F7EF"
 	},
 	"tabBar": {
-		"color": "#909399",
-		"selectedColor": "#FF8A65",
+		"color": "#9AA694",
+		"selectedColor": "#6F8F63",
 		"backgroundColor": "#FFFFFF",
-		"borderStyle": "black",
+		"borderStyle": "white",
 		"list": [
-			{ "pagePath": "pages/index/index", "text": "首页" },
-			{ "pagePath": "pages/list/list", "text": "明细" },
-			{ "pagePath": "pages/stats/stats", "text": "统计" },
-			{ "pagePath": "pages/mine/mine", "text": "我的" }
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png"
+			},
+			{
+				"pagePath": "pages/list/list",
+				"text": "账单",
+				"iconPath": "static/tabbar/bills.png",
+				"selectedIconPath": "static/tabbar/bills-active.png"
+			},
+			{
+				"pagePath": "pages/stats/stats",
+				"text": "报表",
+				"iconPath": "static/tabbar/report.png",
+				"selectedIconPath": "static/tabbar/report-active.png"
+			},
+			{
+				"pagePath": "pages/mine/mine",
+				"text": "我的",
+				"iconPath": "static/tabbar/mine.png",
+				"selectedIconPath": "static/tabbar/mine-active.png"
+			}
 		]
 	}
 }

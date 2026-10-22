@@ -1,59 +1,82 @@
 <template>
-	<view class="dango-page">
-		<view v-if="editId === ''" class="tabs">
-			<view class="tab" :class="{ active: type === 'expense' }" @click="type = 'expense'">支出</view>
-			<view class="tab" :class="{ active: type === 'income' }" @click="type = 'income'">收入</view>
-			<view class="tab" :class="{ active: type === 'transfer' }" @click="type = 'transfer'">转账</view>
-		</view>
-		<view v-else class="dango-card">
-			<text class="dango-muted">编辑记录</text>
+	<view class="page edit-page">
+		<view class="seg">
+			<view class="seg-item" :class="{ 'seg-active': txType === 'expense' }" @click="switchType('expense')">支出</view>
+			<view class="seg-item" :class="{ 'seg-active': txType === 'income' }" @click="switchType('income')">收入</view>
+			<view class="seg-item" :class="{ 'seg-active': txType === 'transfer' }" @click="switchType('transfer')">转账</view>
 		</view>
 
-		<view class="dango-card">
-			<view class="field">
-				<text class="label">金额</text>
-				<input class="amount-input" v-model="amount" type="digit" placeholder="0.00" />
-			</view>
-
-			<view v-if="editId === ''" class="field">
-				<text class="label">{{ type === 'transfer' ? '转出账户' : '账户' }}</text>
-				<picker :range="accountNames" :value="accountIndex" @change="onAccountChange">
-					<view class="picker">{{ accountNames.length > 0 ? accountNames[accountIndex] : '请选择账户' }}</view>
-				</picker>
-			</view>
-			<view v-else class="field">
-				<text class="label">账户</text>
-				<text class="value">{{ accountNames.length > 0 ? accountNames[accountIndex] : '—' }}</text>
-			</view>
-
-			<view v-if="type === 'transfer' && editId === ''" class="field">
-				<text class="label">转入账户</text>
-				<picker :range="accountNames" :value="toIndex" @change="onToAccountChange">
-					<view class="picker">{{ toIndex >= 0 ? accountNames[toIndex] : '请选择转入账户' }}</view>
-				</picker>
-			</view>
-
-			<view v-if="type !== 'transfer'" class="field">
-				<text class="label">分类</text>
-				<picker :range="categoryNames" :value="categoryIndex" @change="onCategoryChange">
-					<view class="picker">{{ categoryIndex >= 0 ? categoryNames[categoryIndex] : '请选择分类' }}</view>
-				</picker>
-			</view>
-
-			<view class="field">
-				<text class="label">日期</text>
-				<picker mode="date" :value="date" @change="onDateChange">
-					<view class="picker">{{ date }}</view>
-				</picker>
-			</view>
-
-			<view class="field">
-				<text class="label">备注</text>
-				<input class="note-input" v-model="note" placeholder="选填" />
-			</view>
+		<view v-if="accounts.length === 0" class="card empty-card">
+			<text class="title">还没有账户</text>
+			<text class="muted">先建一个现金、银行卡或支付宝账户，就能开始记账。</text>
+			<button class="btn-primary empty-btn" @click="goAccounts">去添加账户</button>
 		</view>
 
-		<button class="save" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存' }}</button>
+		<template v-else>
+			<view v-if="txType !== 'transfer'" class="card">
+				<view class="row-between">
+					<text class="section-title">选择分类</text>
+					<text class="tiny" @click="goCategories">管理分类 ›</text>
+				</view>
+				<view v-if="categoryList.length === 0" class="empty">还没有分类，先去添加一个吧</view>
+				<view class="cat-grid">
+					<view v-for="(cat, index) in categoryList" :key="cat.id" class="cat-item" @click="selectCategory(cat)">
+						<view class="cat-icon" :class="[toneClass(index), selectedCategoryId === cat.id ? 'cat-selected' : '']">
+							<text class="cat-emoji">{{ cat.icon }}</text>
+						</view>
+						<text class="cat-name">{{ cat.name }}</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="card">
+				<input class="note-input" v-model="note" placeholder="写点备注，比如「午餐」" maxlength="100" />
+				<view class="chips">
+					<picker v-if="txId === ''" :range="accountNames" :value="accountIndex" @change="onAccountChange">
+						<view class="chip">💳 {{ accountLabel }}</view>
+					</picker>
+					<view v-else class="chip">💳 {{ accountLabel }}</view>
+
+					<picker v-if="txType === 'transfer' && txId === ''" :range="accountNames" :value="toIndex" @change="onToAccountChange">
+						<view class="chip">→ {{ toAccountLabel }}</view>
+					</picker>
+
+					<picker mode="date" :value="date" @change="onDateChange">
+						<view class="chip">📅 {{ date.slice(5) }}</view>
+					</picker>
+				</view>
+
+				<view v-if="recentNotes.length > 0" class="suggest-block">
+					<text class="tiny">最近备注</text>
+					<view class="suggest-row">
+						<view v-for="item in recentNotes" :key="item" class="suggest-chip" @click="useNote(item)">{{ item }}</view>
+					</view>
+				</view>
+			</view>
+
+			<view class="keypad">
+				<view class="keypad-head">
+					<text class="keypad-label">{{ typeLabel }}</text>
+					<text class="keypad-amount">¥ {{ amountDisplay }}</text>
+					<text class="keypad-clear" @click="clearAmount">清空</text>
+				</view>
+
+				<view class="key-grid">
+					<view v-for="key in keys" :key="key" class="key" @click="press(key)">
+						<text class="key-label">{{ key }}</text>
+					</view>
+				</view>
+
+				<view class="key-actions">
+					<view v-if="txId === ''" class="key-action key-again" @click="save(true)">
+						<text class="key-action-text">再记</text>
+					</view>
+					<view class="key-action key-save" :class="{ 'key-save-full': txId !== '' }" @click="save(false)">
+						<text class="key-action-text key-save-text">{{ saving ? '保存中…' : '保存' }}</text>
+					</view>
+				</view>
+			</view>
+		</template>
 	</view>
 </template>
 
@@ -63,31 +86,48 @@
 	import { useAuthStore } from '@/stores/auth.uts'
 	import { useLedgerStore } from '@/stores/ledger.uts'
 	import { centsToInput, yuanToCents } from '@/utils/money.uts'
-	import { localDate, localNoonIso } from '@/utils/date.uts'
+	import { localDate, localMonth, localNoonIso } from '@/utils/date.uts'
 
 	const auth = useAuthStore()
 	const ledger = useLedgerStore()
-	const editId = ref('')
-	const type = ref('expense')
-	const amount = ref('')
+	const txId = ref('')
+	const txType = ref('expense')
+	const amountText = ref('0')
+	const selectedCategoryId = ref('')
 	const accountIndex = ref(0)
-	const toIndex = ref(-1)
-	const categoryIndex = ref(-1)
+	const toIndex = ref(1)
 	const date = ref(localDate())
 	const note = ref('')
 	const saving = ref(false)
+	const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫']
+
+	const accounts = computed((): any[] => ledger.accounts)
 
 	const accountNames = computed((): string[] => {
 		const result: string[] = []
-		for (let index = 0; index < ledger.accounts.length; index++) {
-			const item = ledger.accounts[index]
+		for (let index = 0; index < accounts.value.length; index++) {
+			const item = accounts.value[index]
 			result.push(item.name + '（' + (item.balance / 100).toFixed(2) + '）')
 		}
 		return result
 	})
 
+	const accountLabel = computed((): string => {
+		if (accountIndex.value >= 0 && accountIndex.value < accounts.value.length) {
+			return accounts.value[accountIndex.value].name
+		}
+		return '选择账户'
+	})
+
+	const toAccountLabel = computed((): string => {
+		if (toIndex.value >= 0 && toIndex.value < accounts.value.length) {
+			return accounts.value[toIndex.value].name
+		}
+		return '转入账户'
+	})
+
 	const categoryList = computed((): any[] => {
-		const kind = type.value == 'income' ? 'income' : 'expense'
+		const kind = txType.value == 'income' ? 'income' : 'expense'
 		const result: any[] = []
 		for (let index = 0; index < ledger.categories.length; index++) {
 			const item = ledger.categories[index]
@@ -96,18 +136,38 @@
 		return result
 	})
 
-	const categoryNames = computed((): string[] => {
+	const amountDisplay = computed((): string => {
+		const text = amountText.value
+		if (text == '0') return '0.00'
+		const dot = text.indexOf('.')
+		if (dot < 0) return text + '.00'
+		const decimals = text.length - dot - 1
+		if (decimals == 0) return text + '00'
+		if (decimals == 1) return text + '0'
+		return text
+	})
+
+	const recentNotes = computed((): string[] => {
 		const result: string[] = []
-		for (let index = 0; index < categoryList.value.length; index++) {
-			const item = categoryList.value[index]
-			result.push(item.icon + ' ' + item.name)
+		for (let index = 0; index < ledger.transactions.length; index++) {
+			const text = ledger.transactions[index].note
+			if (text != null && text !== '' && result.indexOf(text) < 0) {
+				result.push(text)
+			}
+			if (result.length >= 4) break
 		}
 		return result
 	})
 
+	const typeLabel = computed((): string => {
+		if (txType.value == 'income') return '收入'
+		if (txType.value == 'transfer') return '转账'
+		return '支出'
+	})
+
 	onLoad((options: any) => {
 		if (options != null && options.id != null) {
-			editId.value = options.id.toString()
+			txId.value = options.id.toString()
 		}
 		init()
 	})
@@ -120,8 +180,13 @@
 		try {
 			await ledger.loadAccounts()
 			await ledger.loadCategories()
-			if (editId.value !== '') {
+			await ledger.loadTransactions(localMonth(), '', 1)
+			if (txId.value !== '') {
 				await loadForEdit()
+			} else {
+				setDefaultCategory()
+				if (accounts.value.length > 1) toIndex.value = 1
+				if (accounts.value.length <= 1) toIndex.value = 0
 			}
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
@@ -129,25 +194,87 @@
 	}
 
 	async function loadForEdit(): Promise<void> {
-		const data = await api.transactions.list('', '', 1, 200)
-		const items = data.items as any[]
-		for (let index = 0; index < items.length; index++) {
-			const item = items[index]
-			if (item.id == editId.value) {
-				type.value = item.type
-				amount.value = centsToInput(item.amount)
-				date.value = item.occurred_at.slice(0, 10)
-				note.value = item.note
-				for (let i = 0; i < ledger.accounts.length; i++) {
-					if (ledger.accounts[i].id == item.account_id) accountIndex.value = i
+		let targetPage = 1
+		let found: any = null
+		while (targetPage <= 10 && found == null) {
+			const data = await api.transactions.list('', '', targetPage, 100)
+			const items = data.items as any[]
+			for (let index = 0; index < items.length; index++) {
+				if (items[index].id == txId.value) {
+					found = items[index]
+					break
 				}
-				for (let i = 0; i < categoryList.value.length; i++) {
-					if (categoryList.value[i].id == item.category_id) categoryIndex.value = i
-				}
-				return
 			}
+			if (items.length == 0) break
+			targetPage++
 		}
-		uni.showToast({ title: '记录不存在', icon: 'none' })
+		if (found == null) {
+			uni.showToast({ title: '账单不存在', icon: 'none' })
+			return
+		}
+		txType.value = found.type
+		amountText.value = centsToInput(found.amount)
+		selectedCategoryId.value = found.category_id != null ? found.category_id : ''
+		date.value = found.occurred_at.slice(0, 10)
+		note.value = found.note
+		for (let index = 0; index < accounts.value.length; index++) {
+			if (accounts.value[index].id == found.account_id) accountIndex.value = index
+			if (found.to_account_id != null && accounts.value[index].id == found.to_account_id) toIndex.value = index
+		}
+	}
+
+	function setDefaultCategory(): void {
+		if (selectedCategoryId.value !== '') return
+		if (categoryList.value.length > 0) {
+			selectedCategoryId.value = categoryList.value[0].id
+		}
+	}
+
+	function switchType(type: string): void {
+		if (txId.value !== '') return
+		txType.value = type
+		selectedCategoryId.value = ''
+		if (type !== 'transfer') setDefaultCategory()
+	}
+
+	function selectCategory(cat: any): void {
+		selectedCategoryId.value = cat.id
+	}
+
+	function toneClass(index: number): string {
+		return 'tone-' + (index % 6).toString()
+	}
+
+	function press(key: string): void {
+		if (key == '⌫') {
+			if (amountText.value.length <= 1) {
+				amountText.value = '0'
+			} else {
+				amountText.value = amountText.value.slice(0, amountText.value.length - 1)
+			}
+			return
+		}
+		if (key == '.') {
+			if (amountText.value.indexOf('.') >= 0) return
+			amountText.value = amountText.value + '.'
+			return
+		}
+		const dot = amountText.value.indexOf('.')
+		if (dot >= 0 && amountText.value.length - dot > 2) return
+		if (amountText.value.length >= 9) return
+		if (amountText.value == '0') {
+			amountText.value = key
+		} else {
+			amountText.value = amountText.value + key
+		}
+	}
+
+	function clearAmount(): void {
+		amountText.value = '0'
+	}
+
+	function useNote(text: string): void {
+		note.value = text
 	}
 
 	function onAccountChange(event: any): void {
@@ -158,121 +285,324 @@
 		toIndex.value = Number(event.detail.value)
 	}
 
-	function onCategoryChange(event: any): void {
-		categoryIndex.value = Number(event.detail.value)
-	}
-
 	function onDateChange(event: any): void {
 		date.value = event.detail.value.toString()
 	}
 
-	async function save(): Promise<void> {
+	async function save(again: boolean): Promise<void> {
 		if (saving.value) return
 		if (!auth.loggedIn) {
 			uni.showToast({ title: '请先登录', icon: 'none' })
 			return
 		}
-		if (ledger.accounts.length == 0) {
-			uni.showToast({ title: '请先到账户页添加账户', icon: 'none' })
+		if (accounts.value.length == 0) {
+			uni.showToast({ title: '请先添加账户', icon: 'none' })
 			return
 		}
+		const cents = yuanToCents(amountText.value)
+		if (cents <= 0) {
+			uni.showToast({ title: '请输入金额', icon: 'none' })
+			return
+		}
+		if (txType.value !== 'transfer' && selectedCategoryId.value === '') {
+			uni.showToast({ title: '请选择分类', icon: 'none' })
+			return
+		}
+		if (txType.value === 'transfer' && (toIndex.value < 0 || toIndex.value == accountIndex.value)) {
+			uni.showToast({ title: '请选择不同的转入账户', icon: 'none' })
+			return
+		}
+
 		saving.value = true
 		try {
-			const cents = yuanToCents(amount.value)
-			const payload: any = {
-				amount: cents,
-				category_id: type.value == 'transfer' ? null : (categoryIndex.value >= 0 ? categoryList.value[categoryIndex.value].id : null),
-				occurred_at: localNoonIso(date.value),
-				note: note.value
-			}
-			if (editId.value !== '') {
-				await api.transactions.update(editId.value, payload)
+			if (txId.value !== '') {
+				const payload: any = {
+					amount: cents,
+					category_id: txType.value === 'transfer' ? null : selectedCategoryId.value,
+					occurred_at: localNoonIso(date.value),
+					note: note.value
+				}
+				await api.transactions.update(txId.value, payload)
 			} else {
-				payload.type = type.value
-				payload.account_id = ledger.accounts[accountIndex.value].id
-				payload.to_account_id = type.value == 'transfer' && toIndex.value >= 0 ? ledger.accounts[toIndex.value].id : null
+				const payload: any = {
+					type: txType.value,
+					amount: cents,
+					account_id: accounts.value[accountIndex.value].id,
+					to_account_id: txType.value === 'transfer' ? accounts.value[toIndex.value].id : null,
+					category_id: txType.value === 'transfer' ? null : selectedCategoryId.value,
+					occurred_at: localNoonIso(date.value),
+					note: note.value
+				}
 				await api.transactions.create(payload)
 			}
 			await ledger.loadAccounts()
 			uni.showToast({ title: '已保存', icon: 'success' })
-			setTimeout(() => uni.navigateBack(), 300)
+			if (again && txId.value === '') {
+				amountText.value = '0'
+				note.value = ''
+			} else {
+				setTimeout(() => uni.navigateBack(), 250)
+			}
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		} finally {
 			saving.value = false
 		}
 	}
+
+	function goAccounts(): void {
+		uni.navigateTo({ url: '/pages/accounts/accounts' })
+	}
+
+	function goCategories(): void {
+		uni.navigateTo({ url: '/pages/categories/categories' })
+	}
 </script>
 
 <style>
-	.tabs {
+	.seg {
 		display: flex;
 		flex-direction: row;
 		background-color: #ffffff;
-		border-radius: 20rpx;
+		border-radius: 999rpx;
 		padding: 8rpx;
-		margin-bottom: 24rpx;
+		margin-bottom: 20rpx;
 	}
 
-	.tab {
+	.edit-page {
+		padding-bottom: 600rpx;
+	}
+
+	.seg-item {
 		flex: 1;
 		text-align: center;
 		padding: 16rpx 0;
-		border-radius: 12rpx;
-		font-size: 28rpx;
-		color: #606266;
+		border-radius: 999rpx;
+		font-size: 26rpx;
+		color: #6c7766;
 	}
 
-	.tab.active {
-		background-color: #ff8a65;
+	.seg-active {
+		background-color: #6f8f63;
 		color: #ffffff;
 		font-weight: 600;
 	}
 
-	.field {
+	.empty-card {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.empty-btn {
+		margin-top: 20rpx;
+	}
+
+	.cat-grid {
 		display: flex;
 		flex-direction: row;
+		flex-wrap: wrap;
+		margin-top: 12rpx;
+	}
+
+	.cat-item {
+		width: 25%;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		justify-content: space-between;
-		min-height: 92rpx;
-		border-bottom-width: 1rpx;
-		border-bottom-style: solid;
-		border-bottom-color: #f2f3f5;
+		margin-top: 14rpx;
 	}
 
-	.label {
-		color: #606266;
-		font-size: 28rpx;
+	.cat-icon {
+		width: 76rpx;
+		height: 76rpx;
+		border-radius: 38rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-width: 3rpx;
+		border-style: solid;
+		border-color: transparent;
 	}
 
-	.value {
-		color: #303133;
-		font-size: 28rpx;
+	.cat-selected {
+		border-color: #6f8f63;
 	}
 
-	.amount-input {
-		flex: 1;
-		text-align: right;
-		font-size: 40rpx;
-		font-weight: 600;
+	.cat-emoji {
+		font-size: 34rpx;
+	}
+
+	.cat-name {
+		font-size: 20rpx;
+		color: #6c7766;
+		margin-top: 6rpx;
+	}
+
+	.tone-0 {
+		background-color: #fbe6ea;
+	}
+
+	.tone-1 {
+		background-color: #f8efd9;
+	}
+
+	.tone-2 {
+		background-color: #e8f3e1;
+	}
+
+	.tone-3 {
+		background-color: #e6f0f7;
+	}
+
+	.tone-4 {
+		background-color: #efeaf7;
+	}
+
+	.tone-5 {
+		background-color: #f6f0e2;
 	}
 
 	.note-input {
+		height: 64rpx;
+		font-size: 26rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #eef2e9;
+	}
+
+	.chips {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		margin-top: 12rpx;
+	}
+
+	.chip {
+		background-color: #f4f7ef;
+		color: #5f6b59;
+		font-size: 23rpx;
+		padding: 10rpx 20rpx;
+		border-radius: 999rpx;
+		margin-right: 12rpx;
+		margin-bottom: 8rpx;
+	}
+
+	.suggest-block {
+		margin-top: 14rpx;
+	}
+
+	.suggest-row {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		margin-top: 8rpx;
+	}
+
+	.suggest-chip {
+		background-color: #f8f1f2;
+		color: #8d6a70;
+		font-size: 22rpx;
+		padding: 8rpx 18rpx;
+		border-radius: 999rpx;
+		margin-right: 10rpx;
+		margin-bottom: 6rpx;
+	}
+
+	.keypad {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10;
+		background-color: #a9c89b;
+		border-radius: 30rpx 30rpx 0 0;
+		padding: 22rpx 18rpx 28rpx;
+	}
+
+	.keypad-head {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding-left: 10rpx;
+		padding-right: 10rpx;
+		margin-bottom: 14rpx;
+	}
+
+	.keypad-label {
+		color: #4f6a46;
+		font-size: 22rpx;
+	}
+
+	.keypad-amount {
 		flex: 1;
 		text-align: right;
-		font-size: 28rpx;
+		color: #2f3a2c;
+		font-size: 34rpx;
+		font-weight: 700;
 	}
 
-	.picker {
-		color: #303133;
-		font-size: 28rpx;
+	.keypad-clear {
+		color: #4f6a46;
+		font-size: 22rpx;
+		margin-left: 18rpx;
 	}
 
-	.save {
-		margin-top: 32rpx;
-		background-color: #ff8a65;
-		color: #ffffff;
-		border-radius: 16rpx;
+	.key-grid {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.key {
+		width: 33.33%;
+		height: 86rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.key-label {
+		font-size: 36rpx;
+		color: #2f3a2c;
+		font-weight: 500;
+	}
+
+	.key-actions {
+		display: flex;
+		flex-direction: row;
+		margin-top: 6rpx;
+	}
+
+	.key-action {
+		height: 84rpx;
+		border-radius: 999rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.key-again {
+		flex: 1;
+		background-color: #c3d9b7;
+		margin-right: 12rpx;
+	}
+
+	.key-save {
+		flex: 2;
+		background-color: #4f6a46;
+	}
+
+	.key-save-full {
+		flex: 1;
+	}
+
+	.key-action-text {
 		font-size: 30rpx;
+		color: #2f3a2c;
+		font-weight: 600;
+	}
+
+	.key-save-text {
+		color: #ffffff;
 	}
 </style>

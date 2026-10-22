@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query
 
@@ -23,6 +23,55 @@ _STATS_FILTER = """
     AND t.occurred_at >= ?
     AND t.occurred_at < ?
 """
+
+
+def _category_items(
+    db: Database,
+    user_id: str,
+    start: str,
+    end: str,
+    kind: str,
+    total: int,
+) -> list[dict[str, Any]]:
+    """按分类汇总某一收支方向，返回前端图表直接可用的结构。"""
+
+    rows = db.fetchall(
+        f"""
+        SELECT
+            t.category_id AS category_id,
+            c.name AS name,
+            c.icon AS icon,
+            c.color AS color,
+            SUM(t.amount) AS amount,
+            COUNT(*) AS count
+        FROM transactions t
+        LEFT JOIN categories c
+               ON c.id = t.category_id
+              AND (c.user_id = t.user_id OR c.user_id = '__system__')
+        WHERE {_STATS_FILTER}
+          AND t.type = ?
+        GROUP BY t.category_id
+        ORDER BY amount DESC, name ASC
+        """,
+        (user_id, start, end, kind),
+    )
+
+    items: list[dict[str, Any]] = []
+    for row in rows:
+        amount = int(row["amount"])
+        percent = round(amount * 100 / total, 2) if total > 0 else 0.0
+        items.append(
+            {
+                "category_id": row["category_id"],
+                "name": row["name"] or "未分类",
+                "icon": row["icon"] or "❓",
+                "color": row["color"] or "#9E9E9E",
+                "amount": amount,
+                "percent": percent,
+                "count": int(row["count"]),
+            }
+        )
+    return items
 
 
 @router.get("/overview", summary="月度概览")
@@ -53,42 +102,8 @@ def overview(
     expense = int(summary["expense"]) if summary is not None else 0
     transaction_count = int(summary["transaction_count"]) if summary is not None else 0
 
-    category_rows = db.fetchall(
-        f"""
-        SELECT
-            t.category_id AS category_id,
-            c.name AS name,
-            c.icon AS icon,
-            c.color AS color,
-            SUM(t.amount) AS amount,
-            COUNT(*) AS count
-        FROM transactions t
-        LEFT JOIN categories c
-               ON c.id = t.category_id
-              AND (c.user_id = t.user_id OR c.user_id = '__system__')
-        WHERE {_STATS_FILTER}
-          AND t.type = 'expense'
-        GROUP BY t.category_id
-        ORDER BY amount DESC, name ASC
-        """,
-        params,
-    )
-
-    categories: list[dict[str, Any]] = []
-    for row in category_rows:
-        amount = int(row["amount"])
-        percent = round(amount * 100 / expense, 2) if expense > 0 else 0.0
-        categories.append(
-            {
-                "category_id": row["category_id"],
-                "name": row["name"] or "未分类",
-                "icon": row["icon"] or "❓",
-                "color": row["color"] or "#9E9E9E",
-                "amount": amount,
-                "percent": percent,
-                "count": int(row["count"]),
-            }
-        )
+    category_rows = _category_items(db, user_id, start, end, "expense", expense)
+    categories = category_rows
 
     daily_rows = db.fetchall(
         f"""
@@ -127,6 +142,34 @@ def overview(
         "transaction_count": transaction_count,
         "categories": categories,
         "daily": daily,
+    }
+
+
+@router.get("/categories", summary="分类占比（支出 / 收入）")
+def category_breakdown(
+    month: str | None = Query(default=None, pattern=MONTH_PATTERN),
+    kind: Literal["expense", "income"] = Query(default="expense"),
+    user: dict[str, Any] = Depends(get_current_user),
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    user_id = str(user["id"])
+    target_month = month or current_month()
+    start, end = month_range(target_month)
+    total_row = db.fetchone(
+        f"""
+        SELECT COALESCE(SUM(t.amount), 0) AS total
+        FROM transactions t
+        WHERE {_STATS_FILTER}
+          AND t.type = ?
+        """,
+        (user_id, start, end, kind),
+    )
+    total = int(total_row["total"]) if total_row is not None else 0
+    return {
+        "month": target_month,
+        "kind": kind,
+        "total": total,
+        "items": _category_items(db, user_id, start, end, kind, total),
     }
 
 

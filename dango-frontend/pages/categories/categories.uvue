@@ -1,30 +1,45 @@
 <template>
-	<view class="dango-page">
+	<view class="page">
 		<view class="tabs">
-			<view class="tab" :class="{ active: kind === 'expense' }" @click="kind = 'expense'">支出分类</view>
-			<view class="tab" :class="{ active: kind === 'income' }" @click="kind = 'income'">收入分类</view>
+			<view class="tab" :class="{ 'tab-active': kind === 'expense' }" @click="kind = 'expense'">支出分类</view>
+			<view class="tab" :class="{ 'tab-active': kind === 'income' }" @click="kind = 'income'">收入分类</view>
 		</view>
 
-		<view class="dango-card">
-			<view v-for="item in list" :key="item.id" class="row">
-				<text class="name">{{ item.icon }} {{ item.name }}</text>
-				<text v-if="item.is_system" class="dango-muted">系统</text>
-				<text v-else class="delete" @click="confirmDelete(item)">删除</text>
+		<view class="card">
+			<view class="row-between">
+				<text class="section-title">{{ kind === 'expense' ? '支出分类' : '收入分类' }}</text>
+				<text class="tiny">{{ list.length }} 个 · 长按删除自定义</text>
 			</view>
-			<view v-if="list.length === 0" class="empty">暂无分类</view>
+			<view v-if="list.length === 0" class="empty">还没有分类</view>
+			<view class="cat-grid">
+				<view v-for="(item, index) in list" :key="item.id" class="cat-item" @longpress="confirmDelete(item)">
+					<view class="cat-icon" :class="toneClass(index)">
+						<text class="cat-emoji">{{ item.icon }}</text>
+						<view v-if="!item.is_system" class="cat-del" @click.stop="confirmDelete(item)">×</view>
+					</view>
+					<text class="cat-name">{{ item.name }}</text>
+					<text class="cat-flag">{{ item.is_system ? '系统' : '自定义' }}</text>
+				</view>
+			</view>
 		</view>
 
-		<view class="dango-card">
-			<text class="dango-title">添加{{ kind === 'expense' ? '支出' : '收入' }}分类</text>
+		<view class="card">
+			<text class="section-title">新增{{ kind === 'expense' ? '支出' : '收入' }}分类</text>
 			<view class="field">
-				<text class="label">名称</text>
-				<input class="input" v-model="name" placeholder="分类名称" />
+				<text class="field-label">名称</text>
+				<input class="field-input" v-model="name" placeholder="如 咖啡" maxlength="16" />
 			</view>
 			<view class="field">
-				<text class="label">图标</text>
-				<input class="input" v-model="icon" placeholder="emoji，如 🍜" />
+				<text class="field-label">图标</text>
+				<input class="field-input" v-model="icon" placeholder="emoji，如 ☕" maxlength="4" />
 			</view>
-			<button class="primary" @click="add">添加分类</button>
+			<view class="field">
+				<text class="field-label">颜色</text>
+				<view class="color-row">
+					<view v-for="color in colors" :key="color" class="color-dot" :class="{ 'color-active': selectedColor === color }" :style="'background-color:' + color" @click="selectedColor = color"></view>
+				</view>
+			</view>
+			<button class="btn-primary add-btn" @click="add">添加分类</button>
 		</view>
 	</view>
 </template>
@@ -39,6 +54,8 @@
 	const kind = ref('expense')
 	const name = ref('')
 	const icon = ref('')
+	const selectedColor = ref('#F2A6B7')
+	const colors = ['#F2A6B7', '#F6D68A', '#B4D9A8', '#9DC8E8', '#C9B8E8', '#E8B79D']
 
 	const list = computed((): any[] => {
 		const result: any[] = []
@@ -62,13 +79,17 @@
 		}
 	}
 
+	function toneClass(index: number): string {
+		return 'tone-' + (index % 6).toString()
+	}
+
 	async function add(): Promise<void> {
 		if (name.value.trim() === '') {
 			uni.showToast({ title: '请输入分类名称', icon: 'none' })
 			return
 		}
 		try {
-			await ledger.createCategory(name.value.trim(), kind.value, icon.value.trim() === '' ? '🍡' : icon.value.trim())
+			await ledger.createCategory(name.value.trim(), kind.value, icon.value.trim() === '' ? '🍡' : icon.value.trim(), selectedColor.value)
 			name.value = ''
 			icon.value = ''
 			uni.showToast({ title: '已添加', icon: 'success' })
@@ -78,17 +99,18 @@
 	}
 
 	function confirmDelete(item: any): void {
+		if (item.is_system) return
 		uni.showModal({
-			title: '删除分类？',
-			content: '使用该分类的流水会显示未分类',
+			title: '删除分类「' + item.name + '」？',
+			content: '使用该分类的账单会显示为未分类',
 			success: (result: any) => {
 				if (!result.confirm) return
-				deleteCategory(item.id)
+				removeCategory(item.id)
 			}
 		})
 	}
 
-	async function deleteCategory(id: string): Promise<void> {
+	async function removeCategory(id: string): Promise<void> {
 		try {
 			await ledger.removeCategory(id)
 			uni.showToast({ title: '已删除', icon: 'success' })
@@ -103,78 +125,149 @@
 		display: flex;
 		flex-direction: row;
 		background-color: #ffffff;
-		border-radius: 20rpx;
+		border-radius: 999rpx;
 		padding: 8rpx;
-		margin-bottom: 24rpx;
+		margin-bottom: 20rpx;
 	}
 
 	.tab {
 		flex: 1;
 		text-align: center;
 		padding: 16rpx 0;
-		border-radius: 12rpx;
-		color: #606266;
-		font-size: 28rpx;
+		border-radius: 999rpx;
+		font-size: 26rpx;
+		color: #6c7766;
 	}
 
-	.tab.active {
-		background-color: #ff8a65;
+	.tab-active {
+		background-color: #6f8f63;
 		color: #ffffff;
 		font-weight: 600;
 	}
 
-	.row {
+	.cat-grid {
 		display: flex;
 		flex-direction: row;
-		justify-content: space-between;
+		flex-wrap: wrap;
+		margin-top: 12rpx;
+	}
+
+	.cat-item {
+		width: 25%;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		min-height: 84rpx;
-		border-bottom-width: 1rpx;
-		border-bottom-style: solid;
-		border-bottom-color: #f2f3f5;
+		margin-top: 20rpx;
 	}
 
-	.name {
-		font-size: 28rpx;
+	.cat-icon {
+		position: relative;
+		width: 88rpx;
+		height: 88rpx;
+		border-radius: 44rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.delete {
-		color: #f56c6c;
+	.cat-emoji {
+		font-size: 40rpx;
+	}
+
+	.cat-del {
+		position: absolute;
+		right: -4rpx;
+		top: -4rpx;
+		width: 34rpx;
+		height: 34rpx;
+		border-radius: 17rpx;
+		background-color: #d96b6b;
+		color: #ffffff;
 		font-size: 24rpx;
+		text-align: center;
+		line-height: 32rpx;
 	}
 
-	.empty {
-		text-align: center;
-		color: #909399;
-		padding: 30rpx 0;
+	.cat-name {
+		font-size: 21rpx;
+		color: #3f4b39;
+		margin-top: 8rpx;
+	}
+
+	.cat-flag {
+		font-size: 18rpx;
+		color: #a5ada0;
+		margin-top: 2rpx;
+	}
+
+	.tone-0 {
+		background-color: #fbe6ea;
+	}
+
+	.tone-1 {
+		background-color: #f8efd9;
+	}
+
+	.tone-2 {
+		background-color: #e8f3e1;
+	}
+
+	.tone-3 {
+		background-color: #e6f0f7;
+	}
+
+	.tone-4 {
+		background-color: #efeaf7;
+	}
+
+	.tone-5 {
+		background-color: #f6f0e2;
 	}
 
 	.field {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		min-height: 92rpx;
+		min-height: 88rpx;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f2f3f5;
+		border-bottom-color: #eef2e9;
 	}
 
-	.label {
+	.field-label {
 		width: 120rpx;
-		color: #606266;
-		font-size: 28rpx;
+		color: #6c7766;
+		font-size: 26rpx;
 	}
 
-	.input {
+	.field-input {
 		flex: 1;
 		text-align: right;
-		font-size: 28rpx;
+		font-size: 26rpx;
 	}
 
-	.primary {
-		margin-top: 24rpx;
-		background-color: #ff8a65;
-		color: #ffffff;
-		border-radius: 12rpx;
+	.color-row {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.color-dot {
+		width: 42rpx;
+		height: 42rpx;
+		border-radius: 21rpx;
+		margin-left: 14rpx;
+		border-width: 3rpx;
+		border-style: solid;
+		border-color: transparent;
+	}
+
+	.color-active {
+		border-color: #2f3a2c;
+	}
+
+	.add-btn {
+		margin-top: 22rpx;
 	}
 </style>

@@ -2,6 +2,23 @@
 
 uni-app x **蒸汽模式**（HBuilderX 项目根目录）。Vue3 组合式 API + Pinia，所有业务数据走 HTTP 接口，前端不落盘。
 
+界面参考「小青账」的轻量卡片式布局，用团子图标的**抹茶绿 / 樱花粉 / 乳白**做设计变量：浅绿背景、白色卡片、大金额首页、底部四个 tab、记账页固定数字键盘。
+
+## 页面与功能
+
+| 页面 | 功能 |
+|---|---|
+| 首页 | 本月支出大卡片、收入/结余/预算剩余、记一笔、最近三天账单、日历/资产/报表/分类入口 |
+| 账单 | 月份切换、月度收支 + 每日柱状图、搜索、全部/支出/收入/转账筛选、按日分组、分页加载 |
+| 报表 | 支出/收入分类占比、分类排行、近 6 个月趋势、月度预算设置 |
+| 记一笔 | 支出/收入/转账、分类图标网格、自定义数字键盘、常用备注、再记 / 保存 |
+| 日历 | 月历热力、每日收支、选中日账单 |
+| 资产 | 净资产 / 总资产 / 总负债、添加/编辑/删除账户、按流水重算 |
+| 分类 | 支出/收入分类网格、自定义图标和颜色、长按删除 |
+| 我的 | 登录/注册、本月概览、资产/分类/预算/日历入口、退出登录 |
+
+界面截图见 [docs/ui](../docs/ui/README.md)。
+
 ## 环境
 
 - HBuilderX 5.26+（本机安装在 `C:\software\code\HBuilderX`；蒸汽模式见 manifest 的 `"uni-app-x": { "vapor": true }`）
@@ -41,15 +58,17 @@ export const API_BASE = 'http://127.0.0.1:8000'
 ## 目录
 
 ```
-pages/            7 个页面（.uvue）
+pages/            8 个页面（.uvue，含 calendar）
 stores/           Pinia：auth / ledger / stats / budget
 services/api.uts  uni.request 封装 + 全部接口
-utils/            money（元⇄分）、date
+utils/            money（元⇄分）、date（月份/日历工具）
 config.uts        API_BASE
 main.uts          Vue + Pinia
-App.uvue          全局样式
+App.uvue          全局样式与设计变量
 manifest.json     应用信息 + 蒸汽模式
 pages.json        路由 / tabBar
+static/tabbar/    底部 tab 图标（灰 / 绿两套）
+static/icon/      App 图标与透明团子标记
 ```
 
 ## 图标

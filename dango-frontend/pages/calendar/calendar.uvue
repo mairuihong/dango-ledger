@@ -1,0 +1,372 @@
+<template>
+	<view class="page">
+		<view class="card calendar-card">
+			<view class="row-between calendar-head">
+				<view class="month-arrow" @click="prevMonth">‹</view>
+				<text class="month-title">{{ monthTitle(month) }}</text>
+				<view class="month-arrow" @click="nextMonth">›</view>
+			</view>
+
+			<view class="week-row">
+				<text v-for="week in weekdays" :key="week" class="week-name">{{ week }}</text>
+			</view>
+
+			<view class="calendar-grid">
+				<view v-for="cell in cells" :key="cell.key" class="day-cell" :class="cellClass(cell)" @click="selectDay(cell)">
+					<text v-if="cell.day > 0" class="day-num">{{ cell.day }}</text>
+					<text v-if="cell.day > 0 && cell.expense > 0" class="day-expense">{{ shortAmount(cell.expense) }}</text>
+					<text v-else-if="cell.day > 0 && cell.income > 0" class="day-income">+{{ shortAmount(cell.income) }}</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="card">
+			<view class="row-between">
+				<text class="section-title">{{ selectedLabel }}</text>
+				<text class="tiny" v-if="dayItems.length > 0">支 {{ formatCents(dayExpense) }} · 收 {{ formatCents(dayIncome) }}</text>
+			</view>
+			<view v-if="dayItems.length === 0" class="empty">当天没有账单</view>
+			<view v-for="tx in dayItems" :key="tx.id" class="tx-row" @click="goEdit(tx.id)">
+				<view class="icon-circle" :class="toneClass(tx)">
+					<text class="icon-emoji">{{ iconOf(tx) }}</text>
+				</view>
+				<view class="tx-main">
+					<text class="tx-name">{{ nameOf(tx) }}</text>
+					<text class="tiny">{{ noteOf(tx) }}</text>
+				</view>
+				<text class="amount" :class="tx.type === 'income' ? 'income' : (tx.type === 'expense' ? 'expense' : 'muted')">
+					{{ amountText(tx) }}
+				</text>
+			</view>
+		</view>
+
+		<view class="fab" @click="goEdit('')">＋</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { computed, ref } from 'vue'
+	import { useAuthStore } from '@/stores/auth.uts'
+	import { useLedgerStore } from '@/stores/ledger.uts'
+	import { useStatsStore } from '@/stores/stats.uts'
+	import { formatCents } from '@/utils/money.uts'
+	import { dayText, daysInMonth, firstWeekday, localDate, localMonth, monthTitle, shiftMonth } from '@/utils/date.uts'
+
+	const auth = useAuthStore()
+	const ledger = useLedgerStore()
+	const stats = useStatsStore()
+	const weekdays = ['一', '二', '三', '四', '五', '六', '日']
+	const month = ref(localMonth())
+	const selectedDate = ref(localDate())
+
+	const overview = computed((): any => {
+		if (stats.overview == null) {
+			return { income: 0, expense: 0, daily: [] }
+		}
+		return stats.overview
+	})
+
+	const cells = computed((): any[] => {
+		const result: any[] = []
+		const leading = firstWeekday(month.value)
+		const days = daysInMonth(month.value)
+		const daily = overview.value.daily as any[]
+		for (let index = 0; index < leading; index++) {
+			result.push({ key: 'empty-' + index.toString(), day: 0, date: '', expense: 0, income: 0 })
+		}
+		for (let day = 1; day <= days; day++) {
+			const date = dayText(month.value, day)
+			let expense = 0
+			let income = 0
+			for (let index = 0; index < daily.length; index++) {
+				if (daily[index].date == date) {
+					expense = daily[index].expense
+					income = daily[index].income
+					break
+				}
+			}
+			result.push({ key: date, day: day, date: date, expense: expense, income: income })
+		}
+		while (result.length % 7 != 0) {
+			result.push({ key: 'tail-' + result.length.toString(), day: 0, date: '', expense: 0, income: 0 })
+		}
+		return result
+	})
+
+	const maxExpense = computed((): number => {
+		let max = 1
+		for (let index = 0; index < cells.value.length; index++) {
+			if (cells.value[index].expense > max) max = cells.value[index].expense
+		}
+		return max
+	})
+
+	const dayItems = computed((): any[] => {
+		const result: any[] = []
+		for (let index = 0; index < ledger.monthTransactions.length; index++) {
+			const tx = ledger.monthTransactions[index]
+			if (tx.occurred_at.slice(0, 10) == selectedDate.value) result.push(tx)
+		}
+		return result
+	})
+
+	const dayExpense = computed((): number => {
+		let total = 0
+		for (let index = 0; index < dayItems.value.length; index++) {
+			if (dayItems.value[index].type == 'expense') total += dayItems.value[index].amount
+		}
+		return total
+	})
+
+	const dayIncome = computed((): number => {
+		let total = 0
+		for (let index = 0; index < dayItems.value.length; index++) {
+			if (dayItems.value[index].type == 'income') total += dayItems.value[index].amount
+		}
+		return total
+	})
+
+	const selectedLabel = computed((): string => {
+		if (selectedDate.value == '') return '选择一个日期'
+		const day = selectedDate.value.slice(8, 10)
+		const week = weekdays[(new Date(selectedDate.value + 'T12:00:00').getDay() + 6) % 7]
+		return selectedDate.value.slice(5, 7) + '月' + day + '日 · 周' + week
+	})
+
+	onLoad((options: any) => {
+		if (options != null && options.month != null) {
+			month.value = options.month.toString()
+			selectedDate.value = month.value == localMonth() ? localDate() : month.value + '-01'
+		}
+	})
+
+	onPageShow(() => {
+		load()
+	})
+
+	async function load(): Promise<void> {
+		if (!auth.loggedIn) return
+		try {
+			await stats.loadOverview(month.value)
+			await ledger.loadMonthTransactions(month.value)
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	function prevMonth(): void {
+		switchMonth(shiftMonth(month.value, -1))
+	}
+
+	function nextMonth(): void {
+		const next = shiftMonth(month.value, 1)
+		if (next > localMonth()) return
+		switchMonth(next)
+	}
+
+	function switchMonth(target: string): void {
+		month.value = target
+		selectedDate.value = target == localMonth() ? localDate() : target + '-01'
+		load()
+	}
+
+	function selectDay(cell: any): void {
+		if (cell.day == 0) return
+		selectedDate.value = cell.date
+	}
+
+	function cellClass(cell: any): string {
+		if (cell.day == 0) return 'cell-empty'
+		let cls = ''
+		if (cell.date == selectedDate.value) cls += ' cell-selected'
+		if (cell.expense > 0) {
+			const ratio = cell.expense / maxExpense.value
+			if (ratio > 0.66) cls += ' cell-heat-high'
+			else if (ratio > 0.33) cls += ' cell-heat-mid'
+			else cls += ' cell-heat-low'
+		}
+		return cls
+	}
+
+	function shortAmount(cents: number): string {
+		const yuan = Math.round(cents / 100)
+		if (yuan >= 10000) return (yuan / 10000).toFixed(1) + 'w'
+		return yuan.toString()
+	}
+
+	function iconOf(tx: any): string {
+		if (tx.category_icon != null) return tx.category_icon
+		return tx.type == 'transfer' ? '🔁' : '🍡'
+	}
+
+	function nameOf(tx: any): string {
+		if (tx.type == 'transfer') return '内部转账'
+		return tx.category_name != null ? tx.category_name : '未分类'
+	}
+
+	function noteOf(tx: any): string {
+		if (tx.type == 'transfer') {
+			if (tx.note != null && tx.note !== '') return tx.note
+			return tx.account_name + ' → ' + (tx.to_account_name != null ? tx.to_account_name : '')
+		}
+		if (tx.note != null && tx.note !== '') return tx.note
+		return tx.account_name
+	}
+
+	function amountText(tx: any): string {
+		if (tx.type == 'income') return '+' + formatCents(tx.amount)
+		if (tx.type == 'expense') return '-' + formatCents(tx.amount)
+		return formatCents(tx.amount)
+	}
+
+	function toneClass(tx: any): string {
+		return tx.type == 'income' ? 'tone-income' : (tx.type == 'transfer' ? 'tone-transfer' : 'tone-expense')
+	}
+
+	function goEdit(id: string = ''): void {
+		uni.navigateTo({ url: id === '' ? '/pages/edit/edit' : '/pages/edit/edit?id=' + id })
+	}
+</script>
+
+<style>
+	.calendar-card {
+		padding-bottom: 18rpx;
+	}
+
+	.calendar-head {
+		margin-bottom: 18rpx;
+	}
+
+	.month-arrow {
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 30rpx;
+		background-color: #f1f6ec;
+		text-align: center;
+		line-height: 54rpx;
+		font-size: 38rpx;
+		color: #5f6b59;
+	}
+
+	.month-title {
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.week-row {
+		display: flex;
+		flex-direction: row;
+		margin-bottom: 8rpx;
+	}
+
+	.week-name {
+		flex: 1;
+		text-align: center;
+		font-size: 22rpx;
+		color: #9aa393;
+	}
+
+	.calendar-grid {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.day-cell {
+		width: 14.28%;
+		height: 96rpx;
+		border-radius: 14rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		border-width: 2rpx;
+		border-style: solid;
+		border-color: transparent;
+	}
+
+	.cell-empty {
+		background-color: transparent;
+	}
+
+	.cell-selected {
+		border-color: #6f8f63;
+		background-color: #eef5e8;
+	}
+
+	.cell-heat-low {
+		background-color: #fdf3f4;
+	}
+
+	.cell-heat-mid {
+		background-color: #fbe8eb;
+	}
+
+	.cell-heat-high {
+		background-color: #f7d9df;
+	}
+
+	.day-num {
+		font-size: 24rpx;
+		color: #3f4b39;
+	}
+
+	.day-expense {
+		font-size: 18rpx;
+		color: #d96b6b;
+		margin-top: 2rpx;
+	}
+
+	.day-income {
+		font-size: 18rpx;
+		color: #5c8f55;
+		margin-top: 2rpx;
+	}
+
+	.tx-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 16rpx 0;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #f1f5ec;
+	}
+
+	.tx-main {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		margin-left: 16rpx;
+	}
+
+	.tx-name {
+		font-size: 28rpx;
+	}
+
+	.fab {
+		position: fixed;
+		right: 36rpx;
+		bottom: 50rpx;
+		width: 104rpx;
+		height: 104rpx;
+		border-radius: 52rpx;
+		background-color: #6f8f63;
+		color: #ffffff;
+		font-size: 52rpx;
+		text-align: center;
+		line-height: 100rpx;
+	}
+
+	.tone-expense {
+		background-color: #fcecec;
+	}
+
+	.tone-income {
+		background-color: #eaf4e5;
+	}
+
+	.tone-transfer {
+		background-color: #eef2f8;
+	}
+</style>

@@ -153,6 +153,9 @@ export const api: any = {
 		},
 		async trend(months: number): Promise<any> {
 			return await request('GET', '/api/stats/monthly-trend?months=' + months.toString())
+		},
+		async categories(month: string, kind: string): Promise<any> {
+			return await request('GET', '/api/stats/categories?month=' + month + '&kind=' + kind)
 		}
 	}
 }

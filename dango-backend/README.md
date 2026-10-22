@@ -212,6 +212,7 @@ Authorization: Bearer <token>
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/stats/overview?month=YYYY-MM` | 月度汇总 + 支出分类占比 + 每日收支 |
+| GET | `/api/stats/categories?month=YYYY-MM&kind=expense\|income` | 按分类汇总支出或收入，返回 `{month, kind, total, items}` |
 | GET | `/api/stats/monthly-trend?months=6` | 近 N 月收支，1–36 |
 
 `overview` 返回：
@@ -278,7 +279,7 @@ balance = initial_balance
 - 所有删除只写 `deleted_at` 和 `updated_at`，表内保留历史行；
 - 统计只计算 `type in ('income','expense')` 且 `deleted_at is null`；
 - 转账不计收入/支出，也不计入 `transaction_count`；
-- 分类占比按“支出”计算，`percent = 分类支出 / 当月总支出 * 100`，保留两位小数；
+- 分类占比按“支出”计算，`percent = 分类支出 / 当月总支出 * 100`，保留两位小数；收入占比走 `/api/stats/categories?kind=income`，口径同理；
 - 每月趋势以当前月为 `end_month`，向前补零。
 
 ### 错误

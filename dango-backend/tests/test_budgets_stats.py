@@ -425,3 +425,86 @@ def test_monthly_trend_validation(client: TestClient) -> None:
         params={"months": 0},
     )
     assert response.status_code == 422
+
+
+def test_category_breakdown_income(client: TestClient) -> None:
+    token = register(client)["token"]
+    account = create_account(client, token, initial_balance=0)
+    salary = find_category(client, token, "工资", "income")
+    bonus = find_category(client, token, "奖金", "income")
+    food = find_category(client, token, "餐饮", "expense")
+
+    create_transaction(
+        client,
+        token,
+        tx_type="income",
+        amount=50000,
+        account_id=account["id"],
+        category_id=salary["id"],
+        occurred_at="2024-04-05",
+    )
+    create_transaction(
+        client,
+        token,
+        tx_type="income",
+        amount=20000,
+        account_id=account["id"],
+        category_id=bonus["id"],
+        occurred_at="2024-04-06",
+    )
+    create_transaction(
+        client,
+        token,
+        amount=9000,
+        account_id=account["id"],
+        category_id=food["id"],
+        occurred_at="2024-04-07",
+    )
+
+    response = client.get(
+        "/api/stats/categories",
+        headers=auth_headers(token),
+        params={"month": "2024-04", "kind": "income"},
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["month"] == "2024-04"
+    assert payload["kind"] == "income"
+    assert payload["total"] == 70000
+    assert [item["name"] for item in payload["items"]] == ["工资", "奖金"]
+    assert [item["amount"] for item in payload["items"]] == [50000, 20000]
+    assert [item["percent"] for item in payload["items"]] == [71.43, 28.57]
+
+
+def test_category_breakdown_excludes_transfers(client: TestClient) -> None:
+    token = register(client)["token"]
+    source = create_account(client, token, "现金", initial_balance=10000)
+    target = create_account(client, token, "银行卡", initial_balance=0)
+    create_transaction(
+        client,
+        token,
+        tx_type="transfer",
+        amount=5000,
+        account_id=source["id"],
+        to_account_id=target["id"],
+        occurred_at="2024-04-10",
+    )
+
+    response = client.get(
+        "/api/stats/categories",
+        headers=auth_headers(token),
+        params={"month": "2024-04", "kind": "expense"},
+    )
+    assert response.status_code == 200
+    assert response.json()["total"] == 0
+    assert response.json()["items"] == []
+
+
+def test_category_breakdown_validation(client: TestClient) -> None:
+    token = register(client)["token"]
+    response = client.get(
+        "/api/stats/categories",
+        headers=auth_headers(token),
+        params={"month": "2024-04", "kind": "transfer"},
+    )
+    assert response.status_code == 422

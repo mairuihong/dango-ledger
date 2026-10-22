@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="stick" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6B4226"/>
+      <stop offset="0.45" stop-color="#4A2A18"/>
+      <stop offset="1" stop-color="#2F190D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 透明底团子标记：用于首页/登录页装饰 -->
+  <g transform="rotate(-45 512 560)">
+    <rect x="499" y="790" width="26" height="290" rx="13" fill="url(#stick)"/>
+    <rect x="505" y="798" width="6" height="274" rx="3" fill="#8A5A38" opacity="0.55"/>
+
+    <circle cx="512" cy="548" r="140" fill="#ECD3AC"/>
+    <ellipse cx="470" cy="500" rx="26" ry="38" fill="#FFFFFF" opacity="0.88" transform="rotate(-20 470 500)"/>
+    <circle cx="444" cy="474" r="9" fill="#FFFFFF" opacity="0.95"/>
+
+    <circle cx="512" cy="766" r="140" fill="#B4D9A8"/>
+    <ellipse cx="470" cy="718" rx="24" ry="34" fill="#F3FBEE" opacity="0.78" transform="rotate(-20 470 718)"/>
+    <circle cx="446" cy="694" r="8" fill="#F3FBEE" opacity="0.85"/>
+
+    <circle cx="512" cy="330" r="140" fill="#F2A6B7"/>
+    <circle cx="470" cy="286" r="34" fill="#FFF0F4" opacity="0.9"/>
+    <circle cx="444" cy="260" r="10" fill="#FFF0F4" opacity="0.92"/>
+  </g>
+</svg>

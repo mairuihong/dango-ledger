@@ -1,43 +1,84 @@
 <template>
-	<view class="dango-page">
-		<view class="search-row">
-			<input class="search-input" v-model="keyword" placeholder="搜索备注 / 分类" confirm-type="search" @confirm="reload" />
-			<button class="search-btn" size="mini" @click="reload">搜索</button>
+	<view class="page">
+		<view class="month-bar">
+			<view class="month-arrow" @click="prevMonth">‹</view>
+			<view class="col month-center">
+				<text class="month-title">{{ monthTitle(month) }}</text>
+				<text class="tiny">月账单</text>
+			</view>
+			<view class="month-arrow" @click="nextMonth">›</view>
+			<text class="calendar-link" @click="goCalendar">日历</text>
 		</view>
 
-		<scroll-view class="month-row" scroll-x="true">
-			<view class="month-inner">
-				<view class="month-chip" :class="{ active: month === '' }" @click="pickMonth('')">全部</view>
-				<view v-for="item in months" :key="item" class="month-chip" :class="{ active: month === item }" @click="pickMonth(item)">
-					{{ item }}
+		<view class="card summary-card">
+			<view class="row-between">
+				<view class="col">
+					<text class="tiny">本月支出</text>
+					<text class="summary-expense">{{ formatCents(overview.expense) }}</text>
+				</view>
+				<view class="col summary-right">
+					<text class="tiny">收入 {{ formatCents(overview.income) }}</text>
+					<text class="tiny">结余 {{ formatCents(overview.balance) }}</text>
+				</view>
+			</view>
+
+			<view class="mini-chart">
+				<view v-for="bar in bars" :key="bar.day" class="bar-wrap">
+					<view class="bar" :style="'height:' + bar.height + 'rpx'"></view>
+				</view>
+			</view>
+
+			<view class="row-between chart-meta">
+				<text class="tiny">日均支出 {{ formatCents(dailyAverage) }}</text>
+				<text class="tiny">{{ overview.transaction_count }} 笔</text>
+			</view>
+		</view>
+
+		<view class="search-row">
+			<input class="search-input" v-model="keyword" placeholder="搜索备注、分类" confirm-type="search" @confirm="reload" />
+			<text class="search-action" @click="reload">搜索</text>
+		</view>
+
+		<scroll-view class="filter-scroll" scroll-x="true">
+			<view class="filter-inner">
+				<view v-for="item in filters" :key="item.key" class="pill filter-pill" :class="{ 'pill-active': filterType === item.key }" @click="pickType(item.key)">
+					{{ item.label }}
 				</view>
 			</view>
 		</scroll-view>
 
-		<view v-if="groups.length === 0 && !ledger.loading" class="dango-card empty">
-			{{ keyword === '' ? '这个月还没有记录' : '没有找到匹配的记录' }}
+		<view v-if="groups.length === 0 && !ledger.loading" class="card empty">
+			{{ keyword === '' ? '这个月还没有账单' : '没有找到匹配的账单' }}
 		</view>
 
-		<view v-for="group in groups" :key="group.date" class="group">
-			<view class="group-head">
-				<text class="dango-muted">{{ group.date }}</text>
-				<text class="dango-muted">支出 {{ formatCents(group.expense) }}</text>
+		<view v-for="group in groups" :key="group.date" class="day-block">
+			<view class="day-head">
+				<text class="day-label">{{ group.label }}</text>
+				<text class="tiny">支 {{ formatCents(group.expense) }} · 收 {{ formatCents(group.income) }}</text>
 			</view>
-			<view class="dango-card group-card">
+			<view class="card day-card">
 				<view v-for="tx in group.items" :key="tx.id" class="tx-row" @click="goEdit(tx.id)" @longpress="confirmDelete(tx)">
-					<view class="tx-main">
-						<text class="tx-title">{{ title(tx) }}</text>
-						<text class="dango-muted">{{ tx.note === '' ? tx.account_name : tx.note }}</text>
+					<view class="icon-circle" :class="toneClass(tx)">
+						<text class="icon-emoji">{{ iconOf(tx) }}</text>
 					</view>
-					<text :class="amountClass(tx)">{{ amountText(tx) }}</text>
+					<view class="tx-main">
+						<text class="tx-name">{{ nameOf(tx) }}</text>
+						<text class="tiny">{{ noteOf(tx) }}</text>
+					</view>
+					<view class="tx-right">
+						<text class="amount" :class="tx.type === 'income' ? 'income' : (tx.type === 'expense' ? 'expense' : 'muted')">
+							{{ amountText(tx) }}
+						</text>
+						<text class="tiny">{{ tx.account_name }}</text>
+					</view>
 				</view>
 			</view>
 		</view>
 
-		<button v-if="ledger.transactions.length < ledger.total" class="more" :disabled="ledger.loading" @click="loadMore">
+		<button v-if="ledger.transactions.length < ledger.total" class="btn-soft load-more" :disabled="ledger.loading" @click="loadMore">
 			{{ ledger.loading ? '加载中…' : '加载更多' }}
 		</button>
-		<view v-else-if="ledger.transactions.length > 0" class="dango-muted more-tip">已经到底了</view>
+		<view v-else-if="ledger.transactions.length > 0" class="tiny bottom-tip">已经到底了</view>
 
 		<view class="fab" @click="goEdit('')">＋</view>
 	</view>
@@ -47,29 +88,92 @@
 	import { computed, ref } from 'vue'
 	import { useAuthStore } from '@/stores/auth.uts'
 	import { useLedgerStore } from '@/stores/ledger.uts'
+	import { useStatsStore } from '@/stores/stats.uts'
 	import { formatCents } from '@/utils/money.uts'
-	import { localMonth, recentMonths } from '@/utils/date.uts'
+	import { daysInMonth, localDate, localMonth, monthTitle, shiftMonth } from '@/utils/date.uts'
 
 	const auth = useAuthStore()
 	const ledger = useLedgerStore()
-	const keyword = ref('')
+	const stats = useStatsStore()
 	const month = ref(localMonth())
-	const months = recentMonths(6)
+	const keyword = ref('')
+	const filterType = ref('all')
+	const filters = [
+		{ key: 'all', label: '全部' },
+		{ key: 'expense', label: '支出' },
+		{ key: 'income', label: '收入' },
+		{ key: 'transfer', label: '转账' }
+	]
+
+	const overview = computed((): any => {
+		if (stats.overview == null) {
+			return { income: 0, expense: 0, balance: 0, transaction_count: 0, daily: [] }
+		}
+		return stats.overview
+	})
+
+	const filtered = computed((): any[] => {
+		if (filterType.value == 'all') return ledger.transactions
+		const result: any[] = []
+		for (let index = 0; index < ledger.transactions.length; index++) {
+			const tx = ledger.transactions[index]
+			if (tx.type == filterType.value) result.push(tx)
+		}
+		return result
+	})
 
 	const groups = computed((): any[] => {
 		const result: any[] = []
+		const today = localDate()
+		let currentDate = ''
 		let current: any = null
-		for (let index = 0; index < ledger.transactions.length; index++) {
-			const tx = ledger.transactions[index]
+		for (let index = 0; index < filtered.value.length; index++) {
+			const tx = filtered.value[index]
 			const date = tx.occurred_at.slice(0, 10)
-			if (current == null || current.date != date) {
-				current = { date: date, items: [], expense: 0 }
+			if (date != currentDate) {
+				currentDate = date
+				current = { date: date, label: '', items: [], expense: 0, income: 0 }
+				if (date == today) {
+					current.label = '今天 ' + date.slice(5, 7) + '月' + date.slice(8, 10) + '日'
+				} else {
+					current.label = date.slice(5, 7) + '月' + date.slice(8, 10) + '日'
+				}
 				result.push(current)
 			}
 			current.items.push(tx)
-			if (tx.type == 'expense') {
-				current.expense += tx.amount
+			if (tx.type == 'expense') current.expense += tx.amount
+			if (tx.type == 'income') current.income += tx.amount
+		}
+		return result
+	})
+
+	const dailyAverage = computed((): number => {
+		const days = daysInMonth(month.value)
+		return days > 0 ? Math.round(overview.value.expense / days) : 0
+	})
+
+	const bars = computed((): any[] => {
+		const days = daysInMonth(month.value)
+		const daily = overview.value.daily as any[]
+		const byDay: any[] = []
+		let max = 1
+		for (let day = 1; day <= days; day++) {
+			const date = month.value + (day < 10 ? '-0' : '-') + day.toString()
+			let expense = 0
+			for (let index = 0; index < daily.length; index++) {
+				if (daily[index].date == date) {
+					expense = daily[index].expense
+					break
+				}
 			}
+			if (expense > max) max = expense
+			byDay.push({ day: day, expense: expense })
+		}
+		const result: any[] = []
+		for (let index = 0; index < byDay.length; index++) {
+			const expense = byDay[index].expense
+			const height = expense > 0 ? Math.round((expense * 76) / max) : 0
+			result.push({ day: byDay[index].day, height: height < 6 && height > 0 ? 6 : height })
 		}
 		return result
 	})
@@ -81,9 +185,32 @@
 		}
 		try {
 			await ledger.loadTransactions(month.value, keyword.value, 1)
+			await stats.loadOverview(month.value)
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		}
+	}
+
+	onPageShow(() => {
+		if (auth.loggedIn) {
+			reload()
+		}
+	})
+
+	function prevMonth(): void {
+		month.value = shiftMonth(month.value, -1)
+		reload()
+	}
+
+	function nextMonth(): void {
+		const next = shiftMonth(month.value, 1)
+		if (next > localMonth()) return
+		month.value = next
+		reload()
+	}
+
+	function pickType(type: string): void {
+		filterType.value = type
 	}
 
 	async function loadMore(): Promise<void> {
@@ -94,47 +221,51 @@
 		}
 	}
 
-	function pickMonth(value: string): void {
-		month.value = value
-		reload()
+	function iconOf(tx: any): string {
+		if (tx.category_icon != null) return tx.category_icon
+		return tx.type == 'transfer' ? '🔁' : '🍡'
 	}
 
-	onPageShow(() => {
-		if (auth.loggedIn && ledger.transactions.length === 0) {
-			reload()
-		}
-	})
-
-	function title(tx: any): string {
-		if (tx.type == 'transfer') return '转账'
+	function nameOf(tx: any): string {
+		if (tx.type == 'transfer') return '内部转账'
 		return tx.category_name != null ? tx.category_name : '未分类'
 	}
 
+	function noteOf(tx: any): string {
+		if (tx.note != null && tx.note !== '') return tx.note
+		return tx.type == 'transfer' ? tx.account_name + ' → ' + tx.to_account_name : tx.account_name
+	}
+
 	function amountText(tx: any): string {
-		const sign = tx.type == 'income' ? '+' : '-'
-		return sign + formatCents(tx.amount)
+		if (tx.type == 'income') return '+' + formatCents(tx.amount)
+		if (tx.type == 'expense') return '-' + formatCents(tx.amount)
+		return formatCents(tx.amount)
 	}
 
-	function amountClass(tx: any): string {
-		return tx.type == 'income' ? 'tx-amount dango-income' : 'tx-amount dango-expense'
+	function toneClass(tx: any): string {
+		return tx.type == 'income' ? 'tone-income' : (tx.type == 'transfer' ? 'tone-transfer' : 'tone-expense')
 	}
 
-	function goEdit(id: string): void {
+	function goEdit(id: string = ''): void {
 		uni.navigateTo({ url: id === '' ? '/pages/edit/edit' : '/pages/edit/edit?id=' + id })
+	}
+
+	function goCalendar(): void {
+		uni.navigateTo({ url: '/pages/calendar/calendar?month=' + month.value })
 	}
 
 	function confirmDelete(tx: any): void {
 		uni.showModal({
-			title: '删除这笔记录？',
-			content: '删除后服务端会同步冲销余额',
+			title: '删除这笔账单？',
+			content: '删除后余额会同步冲销',
 			success: (result: any) => {
 				if (!result.confirm) return
-				deleteTransaction(tx.id)
+				removeTransaction(tx.id)
 			}
 		})
 	}
 
-	async function deleteTransaction(id: string): Promise<void> {
+	async function removeTransaction(id: string): Promise<void> {
 		try {
 			await ledger.removeTransaction(id)
 			await reload()
@@ -146,65 +277,141 @@
 </script>
 
 <style>
+	.month-bar {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 20rpx;
+		position: relative;
+	}
+
+	.month-arrow {
+		width: 64rpx;
+		height: 64rpx;
+		border-radius: 32rpx;
+		background-color: #ffffff;
+		text-align: center;
+		line-height: 58rpx;
+		font-size: 40rpx;
+		color: #5f6b59;
+	}
+
+	.month-center {
+		align-items: center;
+		margin-left: 20rpx;
+		margin-right: 20rpx;
+		min-width: 220rpx;
+	}
+
+	.month-title {
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.calendar-link {
+		position: absolute;
+		right: 12rpx;
+		color: #6f8f63;
+		font-size: 24rpx;
+	}
+
+	.summary-card {
+		padding-bottom: 24rpx;
+	}
+
+	.summary-expense {
+		font-size: 48rpx;
+		font-weight: 700;
+		color: #d96b6b;
+		margin-top: 6rpx;
+	}
+
+	.summary-right {
+		align-items: flex-end;
+	}
+
+	.mini-chart {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
+		height: 84rpx;
+		margin-top: 20rpx;
+	}
+
+	.bar-wrap {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: center;
+		height: 84rpx;
+	}
+
+	.bar {
+		width: 10rpx;
+		background-color: #f2a6b7;
+		border-radius: 5rpx;
+	}
+
+	.chart-meta {
+		margin-top: 10rpx;
+	}
+
 	.search-row {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
+		background-color: #ffffff;
+		border-radius: 999rpx;
+		padding-left: 24rpx;
+		padding-right: 20rpx;
+		height: 76rpx;
+		margin-bottom: 16rpx;
 	}
 
 	.search-input {
 		flex: 1;
-		height: 72rpx;
-		background-color: #ffffff;
-		border-radius: 36rpx;
-		padding-left: 28rpx;
-		padding-right: 28rpx;
 		font-size: 26rpx;
 	}
 
-	.search-btn {
-		margin-left: 16rpx;
-		background-color: #ff8a65;
-		color: #ffffff;
-	}
-
-	.month-row {
-		margin-top: 20rpx;
-		margin-bottom: 8rpx;
-	}
-
-	.month-inner {
-		display: flex;
-		flex-direction: row;
-	}
-
-	.month-chip {
-		display: flex;
-		padding: 10rpx 24rpx;
-		margin-right: 12rpx;
-		border-radius: 28rpx;
-		background-color: #ffffff;
-		color: #606266;
+	.search-action {
+		color: #6f8f63;
 		font-size: 24rpx;
 	}
 
-	.month-chip.active {
-		background-color: #ff8a65;
-		color: #ffffff;
+	.filter-scroll {
+		margin-bottom: 10rpx;
 	}
 
-	.group {
-		margin-top: 20rpx;
+	.filter-inner {
+		display: flex;
+		flex-direction: row;
 	}
 
-	.group-head {
+	.filter-pill {
+		margin-right: 12rpx;
+	}
+
+	.day-block {
+		margin-top: 16rpx;
+	}
+
+	.day-head {
 		display: flex;
 		flex-direction: row;
 		justify-content: space-between;
-		padding: 0 8rpx 10rpx;
+		align-items: center;
+		padding: 6rpx 8rpx 10rpx;
 	}
 
-	.group-card {
+	.day-label {
+		font-size: 24rpx;
+		color: #5f6b59;
+		font-weight: 600;
+	}
+
+	.day-card {
 		padding-top: 4rpx;
 		padding-bottom: 4rpx;
 	}
@@ -212,57 +419,62 @@
 	.tx-row {
 		display: flex;
 		flex-direction: row;
-		justify-content: space-between;
 		align-items: center;
-		padding: 18rpx 0;
+		padding: 16rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f2f3f5;
+		border-bottom-color: #f1f5ec;
 	}
 
 	.tx-main {
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		margin-left: 16rpx;
 	}
 
-	.tx-title {
+	.tx-name {
 		font-size: 28rpx;
 	}
 
-	.tx-amount {
-		font-size: 30rpx;
-		font-weight: 600;
+	.tx-right {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 	}
 
-	.empty {
+	.load-more {
+		margin-top: 18rpx;
+	}
+
+	.bottom-tip {
 		text-align: center;
-		color: #909399;
-		margin-top: 24rpx;
-	}
-
-	.more {
-		margin-top: 20rpx;
-		background-color: #ffffff;
-		color: #606266;
-		font-size: 26rpx;
-	}
-
-	.more-tip {
-		text-align: center;
-		margin-top: 20rpx;
+		margin-top: 18rpx;
 	}
 
 	.fab {
 		position: fixed;
-		right: 40rpx;
-		bottom: 60rpx;
-		width: 96rpx;
-		height: 96rpx;
-		border-radius: 48rpx;
-		background-color: #ff8a65;
+		right: 36rpx;
+		bottom: 150rpx;
+		width: 104rpx;
+		height: 104rpx;
+		border-radius: 52rpx;
+		background-color: #6f8f63;
 		color: #ffffff;
-		font-size: 48rpx;
+		font-size: 52rpx;
 		text-align: center;
-		line-height: 96rpx;
+		line-height: 100rpx;
+	}
+
+	.tone-expense {
+		background-color: #fcecec;
+	}
+
+	.tone-income {
+		background-color: #eaf4e5;
+	}
+
+	.tone-transfer {
+		background-color: #eef2f8;
 	}
 </style>

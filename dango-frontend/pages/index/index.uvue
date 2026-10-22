@@ -1,67 +1,92 @@
 <template>
-	<view class="dango-page">
+	<view class="page">
 		<view class="hero">
-			<text class="hero-label">本月结余</text>
-			<text class="hero-amount">{{ formatCents(summary.balance) }}</text>
-			<view class="hero-row">
-				<view class="hero-item">
-					<text class="hero-label">收入</text>
-					<text class="hero-value">{{ formatCents(summary.income) }}</text>
+			<image class="hero-mark" src="/static/icon/dango-mark.png" mode="aspectFit"></image>
+			<view class="hero-copy">
+				<view class="row-between hero-top">
+					<text class="hero-eyebrow">{{ greeting }} · {{ month }} 支出</text>
+					<text class="hero-month" @click="goList">明细 ›</text>
 				</view>
-				<view class="hero-item">
-					<text class="hero-label">支出</text>
-					<text class="hero-value">{{ formatCents(summary.expense) }}</text>
-				</view>
-			</view>
-		</view>
-
-		<view v-if="!auth.loggedIn" class="dango-card center">
-			<text class="dango-muted">登录后开始记账</text>
-			<button class="primary" @click="goMine">去登录</button>
-		</view>
-
-		<template v-else>
-			<view class="dango-card">
-				<view class="row-between">
-					<text class="dango-title">本月预算</text>
-					<text class="dango-muted" @click="goStats">设置</text>
+				<text class="hero-amount">{{ formatCents(summary.expense) }}</text>
+				<view class="hero-meta">
+					<view class="hero-meta-item">
+						<text class="hero-meta-label">收入</text>
+						<text class="hero-meta-value">{{ formatCents(summary.income) }}</text>
+					</view>
+					<view class="hero-meta-item">
+						<text class="hero-meta-label">结余</text>
+						<text class="hero-meta-value">{{ formatCents(summary.balance) }}</text>
+					</view>
+					<view class="hero-meta-item">
+						<text class="hero-meta-label">预算剩余</text>
+						<text class="hero-meta-value">{{ budget.amount > 0 ? formatCents(budgetLeft) : '未设置' }}</text>
+					</view>
 				</view>
 				<view class="budget-track">
 					<view class="budget-fill" :style="'width:' + budgetPercent + '%'"></view>
 				</view>
-				<view class="row-between budget-meta">
-					<text class="dango-muted">已支出 {{ formatCents(summary.expense) }}</text>
-					<text class="dango-muted">{{ budget.amount > 0 ? '预算 ' + formatCents(budget.amount) : '未设置' }}</text>
+			</view>
+		</view>
+
+		<view v-if="!auth.loggedIn" class="card login-card">
+			<view class="row">
+				<image class="login-mark" src="/static/icon/dango-mark.png" mode="aspectFit"></image>
+				<view class="col flex1">
+					<text class="title">欢迎来到团子账本</text>
+					<text class="muted">登录后，账单会保存在服务端，换设备也能看到同一本账。</text>
 				</view>
 			</view>
+			<button class="btn-primary login-btn" @click="goMine">登录 / 注册</button>
+		</view>
 
-			<view class="quick">
-				<view class="quick-item" @click="goEdit">
-					<text class="quick-icon">＋</text>
-					<text class="quick-text">记一笔</text>
+		<template v-else>
+			<button class="btn-primary record-btn" @click="goEdit('')">
+				<text class="record-plus">＋</text>
+				<text>记一笔</text>
+			</button>
+
+			<view class="quick-grid">
+				<view class="quick-item" @click="goCalendar">
+					<view class="quick-icon"><text class="icon-emoji">📅</text></view>
+					<text class="quick-text">日历</text>
 				</view>
 				<view class="quick-item" @click="goAccounts">
-					<text class="quick-icon">￥</text>
-					<text class="quick-text">账户</text>
+					<view class="quick-icon"><text class="icon-emoji">💰</text></view>
+					<text class="quick-text">资产</text>
+				</view>
+				<view class="quick-item" @click="goStats">
+					<view class="quick-icon"><text class="icon-emoji">📊</text></view>
+					<text class="quick-text">报表</text>
 				</view>
 				<view class="quick-item" @click="goCategories">
-					<text class="quick-icon">☰</text>
+					<view class="quick-icon"><text class="icon-emoji">🍡</text></view>
 					<text class="quick-text">分类</text>
 				</view>
 			</view>
 
-			<view class="dango-card">
+			<view class="card">
 				<view class="row-between">
-					<text class="dango-title">最近记录</text>
-					<text class="dango-muted" @click="goList">全部</text>
+					<text class="section-title">最近账单</text>
+					<text class="muted" @click="goList">全部 ›</text>
 				</view>
-				<view v-if="recent.length === 0" class="empty">还没有记录，先记一笔吧</view>
-				<view v-for="tx in recent" :key="tx.id" class="tx-row">
-					<view class="tx-main">
-						<text class="tx-title">{{ tx.category_name != null ? tx.category_name : (tx.type == 'transfer' ? '转账' : '未分类') }}</text>
-						<text class="dango-muted">{{ tx.occurred_at.slice(0, 10) }} {{ tx.note }}</text>
+				<view v-if="groups.length === 0" class="empty">还没有账单，点上面「记一笔」开始</view>
+				<view v-for="group in groups" :key="group.date" class="day-group">
+					<view class="day-head">
+						<text class="day-label">{{ group.label }}</text>
+						<text class="tiny">支 {{ formatCents(group.expense) }} · 收 {{ formatCents(group.income) }}</text>
 					</view>
-					<text :class="amountClass(tx)">{{ amountText(tx) }}</text>
+					<view v-for="tx in group.items" :key="tx.id" class="tx-row" @click="goEdit(tx.id)">
+						<view class="icon-circle" :class="toneClass(tx)">
+							<text class="icon-emoji">{{ iconOf(tx) }}</text>
+						</view>
+						<view class="tx-main">
+							<text class="tx-name">{{ nameOf(tx) }}</text>
+							<text class="tiny">{{ noteOf(tx) }}</text>
+						</view>
+						<text class="amount" :class="tx.type === 'income' ? 'income' : (tx.type === 'expense' ? 'expense' : 'muted')">
+							{{ amountText(tx) }}
+						</text>
+					</view>
 				</view>
 			</view>
 		</template>
@@ -75,7 +100,7 @@
 	import { useStatsStore } from '@/stores/stats.uts'
 	import { useBudgetStore } from '@/stores/budget.uts'
 	import { formatCents } from '@/utils/money.uts'
-	import { localMonth } from '@/utils/date.uts'
+	import { localDate, localMonth } from '@/utils/date.uts'
 
 	const auth = useAuthStore()
 	const ledger = useLedgerStore()
@@ -90,17 +115,48 @@
 		return stats.overview
 	})
 
+	const budgetLeft = computed((): number => budget.amount - summary.value.expense)
+
 	const budgetPercent = computed((): number => {
 		if (budget.amount <= 0) return 0
 		const percent = Math.round((summary.value.expense * 100) / budget.amount)
 		return percent > 100 ? 100 : percent
 	})
 
-	const recent = computed((): any[] => {
+	const greeting = computed((): string => {
+		const hour = new Date().getHours()
+		if (hour < 11) return '早上好'
+		if (hour < 18) return '下午好'
+		return '晚上好'
+	})
+
+	const groups = computed((): any[] => {
 		const result: any[] = []
-		const size = ledger.transactions.length < 5 ? ledger.transactions.length : 5
-		for (let index = 0; index < size; index++) {
-			result.push(ledger.transactions[index])
+		const today = localDate()
+		const yesterday = localDate(new Date(new Date().getTime() - 86400000))
+		let currentDate = ''
+		let current: any = null
+		for (let index = 0; index < ledger.transactions.length; index++) {
+			const tx = ledger.transactions[index]
+			const date = tx.occurred_at.slice(0, 10)
+			if (date != currentDate) {
+				if (result.length >= 3) break
+				currentDate = date
+				current = { date: date, label: '', items: [], expense: 0, income: 0 }
+				if (date == today) {
+					current.label = '今天'
+				} else if (date == yesterday) {
+					current.label = '昨天'
+				} else {
+					current.label = date.slice(5, 7) + '月' + date.slice(8, 10) + '日'
+				}
+				result.push(current)
+			}
+			if (current != null) {
+				current.items.push(tx)
+				if (tx.type == 'expense') current.expense += tx.amount
+				if (tx.type == 'income') current.income += tx.amount
+			}
 		}
 		return result
 	})
@@ -111,7 +167,7 @@
 			await ledger.loadAccounts()
 			await ledger.loadCategories()
 			await ledger.loadTransactions(month, '', 1)
-			await stats.load(month)
+			await stats.loadOverview(month)
 			await budget.load(month)
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
@@ -122,17 +178,37 @@
 		load()
 	})
 
+	function iconOf(tx: any): string {
+		if (tx.category_icon != null) return tx.category_icon
+		return tx.type == 'transfer' ? '🔁' : '🍡'
+	}
+
+	function nameOf(tx: any): string {
+		if (tx.type == 'transfer') return '内部转账'
+		return tx.category_name != null ? tx.category_name : '未分类'
+	}
+
+	function noteOf(tx: any): string {
+		if (tx.type == 'transfer') {
+			if (tx.note != null && tx.note !== '') return tx.note
+			return tx.account_name + ' → ' + (tx.to_account_name != null ? tx.to_account_name : '')
+		}
+		const note = tx.note != null && tx.note !== '' ? tx.note : tx.account_name
+		return note != null ? note : ''
+	}
+
 	function amountText(tx: any): string {
-		const sign = tx.type == 'income' ? '+' : '-'
-		return sign + formatCents(tx.amount)
+		if (tx.type == 'income') return '+' + formatCents(tx.amount)
+		if (tx.type == 'expense') return '-' + formatCents(tx.amount)
+		return formatCents(tx.amount)
 	}
 
-	function amountClass(tx: any): string {
-		return tx.type == 'income' ? 'tx-amount dango-income' : 'tx-amount dango-expense'
+	function toneClass(tx: any): string {
+		return tx.type == 'income' ? 'tone-income' : (tx.type == 'transfer' ? 'tone-transfer' : 'tone-expense')
 	}
 
-	function goEdit(): void {
-		uni.navigateTo({ url: '/pages/edit/edit' })
+	function goEdit(id: string = ''): void {
+		uni.navigateTo({ url: id === '' ? '/pages/edit/edit' : '/pages/edit/edit?id=' + id })
 	}
 
 	function goList(): void {
@@ -154,84 +230,137 @@
 	function goCategories(): void {
 		uni.navigateTo({ url: '/pages/categories/categories' })
 	}
+
+	function goCalendar(): void {
+		uni.navigateTo({ url: '/pages/calendar/calendar' })
+	}
 </script>
 
 <style>
 	.hero {
-		background-color: #ff8a65;
-		border-radius: 24rpx;
-		padding: 40rpx;
+		position: relative;
+		background-color: #a9c89b;
+		border-radius: 34rpx;
+		padding: 32rpx;
 		margin-bottom: 24rpx;
+		overflow: hidden;
 	}
 
-	.hero-label {
-		color: #fff7f3;
+	.hero-mark {
+		position: absolute;
+		right: -36rpx;
+		top: 6rpx;
+		width: 300rpx;
+		height: 300rpx;
+		opacity: 0.9;
+	}
+
+	.hero-copy {
+		position: relative;
+		z-index: 2;
+	}
+
+	.hero-top {
+		padding-right: 150rpx;
+	}
+
+	.hero-eyebrow {
+		color: #3f5138;
 		font-size: 24rpx;
+		font-weight: 600;
+	}
+
+	.hero-month {
+		color: #4f6a46;
+		font-size: 22rpx;
 	}
 
 	.hero-amount {
 		display: block;
-		color: #ffffff;
+		color: #2f3a2c;
 		font-size: 64rpx;
 		font-weight: 700;
-		margin-top: 8rpx;
+		margin-top: 10rpx;
 	}
 
-	.hero-row {
+	.hero-meta {
 		display: flex;
 		flex-direction: row;
-		margin-top: 28rpx;
+		margin-top: 26rpx;
+		padding-right: 100rpx;
 	}
 
-	.hero-item {
+	.hero-meta-item {
 		display: flex;
 		flex-direction: column;
 		flex: 1;
 	}
 
-	.hero-value {
-		color: #ffffff;
-		font-size: 30rpx;
+	.hero-meta-label {
+		color: #4f6a46;
+		font-size: 21rpx;
+	}
+
+	.hero-meta-value {
+		color: #2f3a2c;
+		font-size: 24rpx;
 		font-weight: 600;
-		margin-top: 6rpx;
-	}
-
-	.center {
-		align-items: center;
-	}
-
-	.row-between {
-		display: flex;
-		flex-direction: row;
-		justify-content: space-between;
-		align-items: center;
+		margin-top: 4rpx;
 	}
 
 	.budget-track {
-		height: 16rpx;
-		background-color: #f2f3f5;
-		border-radius: 8rpx;
-		margin-top: 20rpx;
+		height: 10rpx;
+		background-color: #ffffff;
+		border-radius: 5rpx;
+		margin-top: 22rpx;
 		overflow: hidden;
 	}
 
 	.budget-fill {
-		height: 16rpx;
-		background-color: #ff8a65;
-		border-radius: 8rpx;
+		height: 10rpx;
+		background-color: #4f6a46;
+		border-radius: 5rpx;
 	}
 
-	.budget-meta {
-		margin-top: 12rpx;
+	.login-card {
+		padding: 30rpx;
 	}
 
-	.quick {
+	.login-mark {
+		width: 120rpx;
+		height: 120rpx;
+		margin-right: 20rpx;
+	}
+
+	.login-btn {
+		margin-top: 24rpx;
+	}
+
+	.record-btn {
+		height: 96rpx;
 		display: flex;
 		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 22rpx;
+	}
+
+	.record-plus {
+		font-size: 38rpx;
+		margin-right: 8rpx;
+	}
+
+	.quick-grid {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
 		background-color: #ffffff;
-		border-radius: 20rpx;
-		padding: 20rpx 0;
-		margin-bottom: 24rpx;
+		border-radius: 28rpx;
+		padding: 24rpx 12rpx;
+		margin-bottom: 22rpx;
+		border-width: 1rpx;
+		border-style: solid;
+		border-color: #edf2e7;
 	}
 
 	.quick-item {
@@ -242,52 +371,70 @@
 	}
 
 	.quick-icon {
-		font-size: 40rpx;
-		color: #ff8a65;
+		width: 76rpx;
+		height: 76rpx;
+		border-radius: 38rpx;
+		background-color: #f1f6ec;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.quick-text {
+		font-size: 23rpx;
+		color: #5f6b59;
+		margin-top: 10rpx;
+	}
+
+	.day-group {
+		margin-top: 20rpx;
+	}
+
+	.day-head {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 8rpx;
+	}
+
+	.day-label {
 		font-size: 24rpx;
-		margin-top: 6rpx;
+		color: #5f6b59;
+		font-weight: 600;
 	}
 
 	.tx-row {
 		display: flex;
 		flex-direction: row;
-		justify-content: space-between;
 		align-items: center;
-		padding: 18rpx 0;
+		padding: 16rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f2f3f5;
+		border-bottom-color: #f1f5ec;
 	}
 
 	.tx-main {
 		display: flex;
 		flex-direction: column;
+		flex: 1;
+		margin-left: 16rpx;
 	}
 
-	.tx-title {
+	.tx-name {
 		font-size: 28rpx;
+		color: #2f3a2c;
 	}
 
-	.tx-amount {
-		font-size: 30rpx;
-		font-weight: 600;
+	.tone-expense {
+		background-color: #fcecec;
 	}
 
-	.empty {
-		padding: 40rpx 0;
-		text-align: center;
-		color: #909399;
-		font-size: 26rpx;
+	.tone-income {
+		background-color: #eaf4e5;
 	}
 
-	.primary {
-		margin-top: 20rpx;
-		background-color: #ff8a65;
-		color: #ffffff;
-		border-radius: 12rpx;
-		font-size: 28rpx;
+	.tone-transfer {
+		background-color: #eef2f8;
 	}
 </style>

@@ -32,3 +32,34 @@ export function recentMonths(count: number): string[] {
 	}
 	return result
 }
+
+/** 月份偏移，delta 可为负 */
+export function shiftMonth(month: string, delta: number): string {
+	const year = parseInt(month.slice(0, 4))
+	const monthIndex = parseInt(month.slice(5, 7)) - 1
+	return localMonth(new Date(year, monthIndex + delta, 1))
+}
+
+/** 2026-10 → 2026年10月 */
+export function monthTitle(month: string): string {
+	return month.slice(0, 4) + '年' + month.slice(5, 7) + '月'
+}
+
+export function daysInMonth(month: string): number {
+	const year = parseInt(month.slice(0, 4))
+	const monthIndex = parseInt(month.slice(5, 7))
+	return new Date(year, monthIndex, 0).getDate()
+}
+
+/** 周一为 0，周日为 6 */
+export function firstWeekday(month: string): number {
+	const year = parseInt(month.slice(0, 4))
+	const monthIndex = parseInt(month.slice(5, 7)) - 1
+	const day = new Date(year, monthIndex, 1).getDay()
+	return (day + 6) % 7
+}
+
+export function dayText(month: string, day: number): string {
+	const dayString = day < 10 ? '0' + day.toString() : day.toString()
+	return month + '-' + dayString
+}
