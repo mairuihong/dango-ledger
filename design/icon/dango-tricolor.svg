@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
+    <!-- 纯色上下渐变背景 -->
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFBF5"/>
-      <stop offset="0.55" stop-color="#FFF0DF"/>
-      <stop offset="1" stop-color="#FFD9BE"/>
+      <stop offset="0" stop-color="#FFF9F1"/>
+      <stop offset="1" stop-color="#FFD6B8"/>
     </linearGradient>
-
-    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.62">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.85"/>
-      <stop offset="0.65" stop-color="#FFFFFF" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
 
     <linearGradient id="stick" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#C08848"/>
@@ -62,59 +56,40 @@
     </radialGradient>
   </defs>
 
-  <!-- 背景 -->
+  <!-- 背景：纯色上下渐变，无装饰 -->
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <circle cx="512" cy="500" r="430" fill="url(#glow)"/>
-  <circle cx="512" cy="512" r="392" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="6"/>
 
-  <!-- 樱花点缀 -->
-  <g transform="translate(834 206) rotate(14)" fill="#F3A9BA" opacity="0.55">
-    <ellipse cx="0" cy="-24" rx="14" ry="22"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(72)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(144)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(216)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(288)"/>
-    <circle cx="0" cy="0" r="5" fill="#FFF6E8"/>
-  </g>
-  <g transform="translate(186 838) rotate(-18) scale(0.78)" fill="#F3A9BA" opacity="0.5">
-    <ellipse cx="0" cy="-24" rx="14" ry="22"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(72)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(144)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(216)"/>
-    <ellipse cx="0" cy="-24" rx="14" ry="22" transform="rotate(288)"/>
-    <circle cx="0" cy="0" r="5" fill="#FFF6E8"/>
-  </g>
-
+  <!-- 与 🍡 一致：竹签从左上到右下约 45°，签尖/签尾露出较长 -->
   <g transform="rotate(-45 512 560)">
     <!-- 竹签 -->
-    <rect x="492" y="80" width="40" height="932" rx="20" fill="url(#stick)"/>
-    <rect x="500" y="88" width="10" height="916" rx="5" fill="#FFE3B5" opacity="0.55"/>
+    <rect x="489" y="30" width="46" height="1000" rx="23" fill="url(#stick)"/>
+    <rect x="500" y="38" width="10" height="984" rx="5" fill="#FFE3B5" opacity="0.55"/>
 
-    <!-- 绿色团子（最下） -->
-    <circle cx="512" cy="800" r="150" fill="url(#matcha)"/>
-    <circle cx="512" cy="800" r="150" fill="url(#shadeMatcha)"/>
-    <ellipse cx="452" cy="742" rx="64" ry="36" fill="#FFFFFF" opacity="0.55" transform="rotate(-24 452 742)"/>
-    <circle cx="424" cy="716" r="12" fill="#FFFFFF" opacity="0.8"/>
-    <circle cx="512" cy="800" r="150" fill="none" stroke="#4E6B45" stroke-opacity="0.12" stroke-width="4"/>
+    <!-- 绿色团子（右下） -->
+    <circle cx="512" cy="766" r="130" fill="url(#matcha)"/>
+    <circle cx="512" cy="766" r="130" fill="url(#shadeMatcha)"/>
+    <ellipse cx="452" cy="708" rx="56" ry="31" fill="#FFFFFF" opacity="0.55" transform="rotate(-24 452 708)"/>
+    <circle cx="424" cy="682" r="10" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="512" cy="766" r="130" fill="none" stroke="#4E6B45" stroke-opacity="0.12" stroke-width="4"/>
 
     <!-- 接触阴影：绿→白 -->
-    <ellipse cx="512" cy="674" rx="126" ry="28" fill="url(#contact)"/>
+    <ellipse cx="512" cy="656" rx="110" ry="24" fill="url(#contact)"/>
 
     <!-- 白色团子（中间） -->
-    <circle cx="512" cy="546" r="150" fill="url(#cream)"/>
-    <circle cx="512" cy="546" r="150" fill="url(#shadeCream)"/>
-    <ellipse cx="452" cy="488" rx="64" ry="36" fill="#FFFFFF" opacity="0.85" transform="rotate(-24 452 488)"/>
-    <circle cx="424" cy="462" r="12" fill="#FFFFFF" opacity="0.9"/>
-    <circle cx="512" cy="546" r="150" fill="none" stroke="#8F7047" stroke-opacity="0.10" stroke-width="4"/>
+    <circle cx="512" cy="548" r="130" fill="url(#cream)"/>
+    <circle cx="512" cy="548" r="130" fill="url(#shadeCream)"/>
+    <ellipse cx="452" cy="490" rx="56" ry="31" fill="#FFFFFF" opacity="0.85" transform="rotate(-24 452 490)"/>
+    <circle cx="424" cy="464" r="10" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="512" cy="548" r="130" fill="none" stroke="#8F7047" stroke-opacity="0.10" stroke-width="4"/>
 
     <!-- 接触阴影：白→粉 -->
-    <ellipse cx="512" cy="420" rx="126" ry="28" fill="url(#contact)"/>
+    <ellipse cx="512" cy="438" rx="110" ry="24" fill="url(#contact)"/>
 
-    <!-- 粉色团子（最上） -->
-    <circle cx="512" cy="292" r="150" fill="url(#pink)"/>
-    <circle cx="512" cy="292" r="150" fill="url(#shadePink)"/>
-    <ellipse cx="452" cy="234" rx="64" ry="36" fill="#FFFFFF" opacity="0.62" transform="rotate(-24 452 234)"/>
-    <circle cx="424" cy="208" r="12" fill="#FFFFFF" opacity="0.85"/>
-    <circle cx="512" cy="292" r="150" fill="none" stroke="#93485E" stroke-opacity="0.12" stroke-width="4"/>
+    <!-- 粉色团子（左上） -->
+    <circle cx="512" cy="330" r="130" fill="url(#pink)"/>
+    <circle cx="512" cy="330" r="130" fill="url(#shadePink)"/>
+    <ellipse cx="452" cy="272" rx="56" ry="31" fill="#FFFFFF" opacity="0.62" transform="rotate(-24 452 272)"/>
+    <circle cx="424" cy="246" r="10" fill="#FFFFFF" opacity="0.85"/>
+    <circle cx="512" cy="330" r="130" fill="none" stroke="#93485E" stroke-opacity="0.12" stroke-width="4"/>
   </g>
 </svg>
