@@ -35,10 +35,10 @@
         "distribute" : {
             "icons" : {
                 "android" : {
-                    "hdpi" : "",
-                    "xhdpi" : "",
-                    "xxhdpi" : "",
-                    "xxxhdpi" : ""
+                    "hdpi" : "static/icon/icon-72.png",
+                    "xhdpi" : "static/icon/icon-96.png",
+                    "xxhdpi" : "static/icon/icon-144.png",
+                    "xxxhdpi" : "static/icon/icon-192.png"
                 }
             }
         }
@@ -47,10 +47,10 @@
         "distribute" : {
             "modules" : {},
             "icons" : {
-                "hdpi" : "",
-                "xhdpi" : "",
-                "xxhdpi" : "",
-                "xxxhdpi" : ""
+                "hdpi" : "static/icon/icon-72.png",
+                "xhdpi" : "static/icon/icon-96.png",
+                "xxhdpi" : "static/icon/icon-144.png",
+                "xxxhdpi" : "static/icon/icon-192.png"
             },
             "splashScreens" : {
                 "default" : {}
@@ -60,7 +60,9 @@
     "app-ios" : {
         "distribute" : {
             "modules" : {},
-            "icons" : {},
+            "icons" : {
+                "appstore" : "static/icon/icon-1024.png"
+            },
             "splashScreens" : {}
         }
     }

@@ -8,6 +8,7 @@
 dango-ledger/
 ├── dango-backend/       Python + FastAPI + SQLite（CRUD / 统计 / 预算）
 ├── dango-frontend/      uni-app x 蒸汽模式（HBuilderX 项目根目录）
+├── design/icon/         三彩团子图标（SVG + 多尺寸 PNG）
 ├── scripts/check.ps1    后端格式/lint/测试 + 可选前端编译
 ├── CONTRIBUTING.md      代码规范 / 提交规范
 └── README.md

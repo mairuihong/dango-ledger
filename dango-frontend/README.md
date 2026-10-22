@@ -52,6 +52,14 @@ manifest.json     应用信息 + 蒸汽模式
 pages.json        路由 / tabBar
 ```
 
+## 图标
+
+应用图标为原创的「三彩团子」：粉 / 乳白 / 抹茶三颗团子串在竹签上，暖色和纸背景 + 樱花点缀。
+
+- 源文件与多尺寸 PNG：仓库根目录 [design/icon](../design/icon/README.md)
+- 前端使用：`static/icon/`（Android 72/96/144/192、iOS 1024、favicon 48）
+- 已在 `manifest.json` 配置 Android / iOS 图标，`index.html` 配置 favicon
+
 ## 约定
 
 - 所有数据来自接口；Pinia 只存当前会话内存，刷新/重启重新拉取。
