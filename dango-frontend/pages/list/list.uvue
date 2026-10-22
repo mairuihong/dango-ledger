@@ -80,7 +80,7 @@
 		</button>
 		<view v-else-if="ledger.transactions.length > 0" class="tiny bottom-tip">已经到底了</view>
 
-		<view class="fab" @click="goEdit('')">＋</view>
+		<dango-tab-bar active="bills"></dango-tab-bar>
 	</view>
 </template>
 
@@ -91,6 +91,7 @@
 	import { useStatsStore } from '@/stores/stats.uts'
 	import { formatCents } from '@/utils/money.uts'
 	import { daysInMonth, localDate, localMonth, monthTitle, shiftMonth } from '@/utils/date.uts'
+	import DangoTabBar from '@/components/DangoTabBar.uvue'
 
 	const auth = useAuthStore()
 	const ledger = useLedgerStore()
@@ -450,20 +451,6 @@
 	.bottom-tip {
 		text-align: center;
 		margin-top: 18rpx;
-	}
-
-	.fab {
-		position: fixed;
-		right: 36rpx;
-		bottom: 150rpx;
-		width: 104rpx;
-		height: 104rpx;
-		border-radius: 52rpx;
-		background-color: #6f8f63;
-		color: #ffffff;
-		font-size: 52rpx;
-		text-align: center;
-		line-height: 100rpx;
 	}
 
 	.tone-expense {

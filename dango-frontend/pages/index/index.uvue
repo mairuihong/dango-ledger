@@ -40,11 +40,6 @@
 		</view>
 
 		<template v-else>
-			<button class="btn-primary record-btn" @click="goEdit('')">
-				<text class="record-plus">＋</text>
-				<text>记一笔</text>
-			</button>
-
 			<view class="quick-grid">
 				<view class="quick-item" @click="goCalendar">
 					<view class="quick-icon"><text class="icon-emoji">📅</text></view>
@@ -69,7 +64,7 @@
 					<text class="section-title">最近账单</text>
 					<text class="muted" @click="goList">全部 ›</text>
 				</view>
-				<view v-if="groups.length === 0" class="empty">还没有账单，点上面「记一笔」开始</view>
+				<view v-if="groups.length === 0" class="empty">还没有账单，点下方「＋」开始</view>
 				<view v-for="group in groups" :key="group.date" class="day-group">
 					<view class="day-head">
 						<text class="day-label">{{ group.label }}</text>
@@ -90,6 +85,8 @@
 				</view>
 			</view>
 		</template>
+
+		<dango-tab-bar active="home"></dango-tab-bar>
 	</view>
 </template>
 
@@ -99,6 +96,7 @@
 	import { useLedgerStore } from '@/stores/ledger.uts'
 	import { useStatsStore } from '@/stores/stats.uts'
 	import { useBudgetStore } from '@/stores/budget.uts'
+	import DangoTabBar from '@/components/DangoTabBar.uvue'
 	import { formatCents } from '@/utils/money.uts'
 	import { localDate, localMonth } from '@/utils/date.uts'
 
@@ -212,15 +210,15 @@
 	}
 
 	function goList(): void {
-		uni.switchTab({ url: '/pages/list/list' })
+		uni.reLaunch({ url: '/pages/list/list' })
 	}
 
 	function goStats(): void {
-		uni.switchTab({ url: '/pages/stats/stats' })
+		uni.reLaunch({ url: '/pages/stats/stats' })
 	}
 
 	function goMine(): void {
-		uni.switchTab({ url: '/pages/mine/mine' })
+		uni.reLaunch({ url: '/pages/mine/mine' })
 	}
 
 	function goAccounts(): void {
@@ -334,20 +332,6 @@
 
 	.login-btn {
 		margin-top: 24rpx;
-	}
-
-	.record-btn {
-		height: 96rpx;
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-		margin-bottom: 22rpx;
-	}
-
-	.record-plus {
-		font-size: 38rpx;
-		margin-right: 8rpx;
 	}
 
 	.quick-grid {

@@ -38,37 +38,5 @@
 		"navigationBarTitleText": "团子账本",
 		"navigationBarBackgroundColor": "#F4F7EF",
 		"backgroundColor": "#F4F7EF"
-	},
-	"tabBar": {
-		"color": "#9AA694",
-		"selectedColor": "#6F8F63",
-		"backgroundColor": "#FFFFFF",
-		"borderStyle": "white",
-		"list": [
-			{
-				"pagePath": "pages/index/index",
-				"text": "首页",
-				"iconPath": "static/tabbar/home.png",
-				"selectedIconPath": "static/tabbar/home-active.png"
-			},
-			{
-				"pagePath": "pages/list/list",
-				"text": "账单",
-				"iconPath": "static/tabbar/bills.png",
-				"selectedIconPath": "static/tabbar/bills-active.png"
-			},
-			{
-				"pagePath": "pages/stats/stats",
-				"text": "报表",
-				"iconPath": "static/tabbar/report.png",
-				"selectedIconPath": "static/tabbar/report-active.png"
-			},
-			{
-				"pagePath": "pages/mine/mine",
-				"text": "我的",
-				"iconPath": "static/tabbar/mine.png",
-				"selectedIconPath": "static/tabbar/mine-active.png"
-			}
-		]
 	}
 }

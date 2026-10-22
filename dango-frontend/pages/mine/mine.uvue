@@ -105,6 +105,8 @@
 
 			<text class="tiny api-tip">接口地址：{{ apiBase }}</text>
 		</template>
+
+		<dango-tab-bar active="mine"></dango-tab-bar>
 	</view>
 </template>
 
@@ -115,6 +117,7 @@
 	import { useStatsStore } from '@/stores/stats.uts'
 	import { formatCents } from '@/utils/money.uts'
 	import { localMonth } from '@/utils/date.uts'
+	import DangoTabBar from '@/components/DangoTabBar.uvue'
 
 	const auth = useAuthStore()
 	const stats = useStatsStore()
@@ -151,7 +154,7 @@
 			await auth.login(username.value.trim(), password.value)
 			uni.showToast({ title: '登录成功', icon: 'success' })
 			await loadStats()
-			uni.switchTab({ url: '/pages/index/index' })
+			uni.reLaunch({ url: '/pages/index/index' })
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		} finally {
@@ -166,7 +169,7 @@
 			await auth.register(username.value.trim(), password.value)
 			uni.showToast({ title: '注册成功', icon: 'success' })
 			await loadStats()
-			uni.switchTab({ url: '/pages/index/index' })
+			uni.reLaunch({ url: '/pages/index/index' })
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		} finally {
@@ -188,7 +191,7 @@
 	}
 
 	function goBudget(): void {
-		uni.switchTab({ url: '/pages/stats/stats' })
+		uni.reLaunch({ url: '/pages/stats/stats' })
 	}
 
 	function goCalendar(): void {

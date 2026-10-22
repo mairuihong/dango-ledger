@@ -12,7 +12,7 @@
 	}
 
 	.page {
-		padding: 22rpx 28rpx 200rpx;
+		padding: 22rpx 28rpx 250rpx;
 	}
 
 	.card {

@@ -76,6 +76,8 @@
 				<button class="btn-soft budget-save" @click="saveBudget">保存</button>
 			</view>
 		</view>
+
+		<dango-tab-bar active="stats"></dango-tab-bar>
 	</view>
 </template>
 
@@ -86,6 +88,7 @@
 	import { useBudgetStore } from '@/stores/budget.uts'
 	import { formatCents, yuanToCents } from '@/utils/money.uts'
 	import { localMonth, monthTitle, shiftMonth } from '@/utils/date.uts'
+	import DangoTabBar from '@/components/DangoTabBar.uvue'
 
 	const auth = useAuthStore()
 	const stats = useStatsStore()
