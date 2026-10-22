@@ -62,8 +62,8 @@
   <!-- 与 🍡 一致：竹签从左上到右下约 45°，签尖/签尾露出较长 -->
   <g transform="rotate(-45 512 560)">
     <!-- 竹签 -->
-    <rect x="489" y="30" width="46" height="1000" rx="23" fill="url(#stick)"/>
-    <rect x="500" y="38" width="10" height="984" rx="5" fill="#FFE3B5" opacity="0.55"/>
+    <rect x="489" y="70" width="46" height="990" rx="23" fill="url(#stick)"/>
+    <rect x="500" y="78" width="10" height="974" rx="5" fill="#FFE3B5" opacity="0.55"/>
 
     <!-- 绿色团子（右下） -->
     <circle cx="512" cy="766" r="130" fill="url(#matcha)"/>
