@@ -44,7 +44,7 @@ cd dango-backend
 
 ## 三、前端 / uni-app x
 
-- 项目是 **uni-app x 蒸汽模式**，页面文件 `.uvue`，脚本用 `<script setup lang="uts">`（HBuilderX 5.26 限制；升级到 5.31+ 后可改 `lang="ts"`）。
+- 项目是 **uni-app x 蒸汽模式**，页面文件 `.uvue`，脚本用 `<script setup lang="uts">`（当前项目基线）；HBuilder V 支持 UTS，如后续整体改 `lang="ts"` 需单独验证。
 - 只支持组合式 API，禁止选项式、`mixin`。
 - **样式只用简单 class**，层级用 BEM（`.entry__title`）；禁止 `.a .b`、`>`、属性选择器等运行时关系选择器。SCSS 可以用，但产物必须落到简单 class。
 - 组件样式默认隔离（样式隔离 2.0）；需要外部控制时用 `defineOptions({ styleIsolation: 'app' })` 并写明原因。
@@ -96,9 +96,11 @@ dango-frontend/
 # 后端格式 + lint + 测试
 .\scripts\check.cmd
 
-# 再加前端 Web 编译（需要 HBuilderX 已启动）
+# 前端静态检查（manifest / pages.json / 页面文件）
 .\scripts\check.cmd -Frontend
 ```
+
+前端编译/运行在 **HBuilder V** 中完成：打开 `dango-frontend/`，运行到 H5 / 微信小程序 / Android，确认无编译错误。HBuilder V 没有 CLI，`-Frontend` 只做静态检查，不能替代 GUI 编译。
 
 如果 PowerShell 允许执行脚本，也可以直接运行 `.\scripts\check.ps1`；否则用 `.cmd` 包装（会自动加 `-ExecutionPolicy Bypass`）。
 
@@ -115,7 +117,7 @@ dango-backend\.venv\Scripts\pre-commit.exe run --all-files
 ## 七、PR 检查清单
 
 - [ ] 后端 `ruff format --check`、`ruff check`、`pytest` 全部通过
-- [ ] 前端 HBuilderX 编译 Web 通过
+- [ ] 前端 HBuilder V 编译/运行 H5 通过
 - [ ] 新增/修改接口有测试或手测记录
 - [ ] 金额、余额、转账相关改动逐条验证
 - [ ] 没有提交密钥、`.env`、数据库文件、构建产物

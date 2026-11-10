@@ -9,6 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 MONTH_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])$"
+DATE_PATTERN = r"^\d{4}-\d{2}-\d{2}$"
 
 MAX_AMOUNT = 10**12  # 单笔/预算上限，避免异常大数破坏统计
 MAX_NOTE_LENGTH = 500

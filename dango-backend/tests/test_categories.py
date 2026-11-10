@@ -20,7 +20,7 @@ def test_category_list_contains_system_categories(client: TestClient) -> None:
     assert all(item["is_system"] is True for item in categories)
     assert {item["kind"] for item in categories} == {"expense", "income"}
     system_names = {item["name"] for item in categories}
-    assert {"餐饮", "交通", "工资"} <= system_names
+    assert {"餐饮", "交通", "工资", "宠物", "旅行", "报销", "退款"} <= system_names
 
 
 def test_category_list_sorted_by_kind_and_sort(client: TestClient) -> None:
@@ -32,16 +32,16 @@ def test_category_list_sorted_by_kind_and_sort(client: TestClient) -> None:
 
 def test_create_custom_category(client: TestClient) -> None:
     token = register(client)["token"]
-    created = create_category(client, token, "咖啡", "expense", "☕", "#795548")
-    assert created["name"] == "咖啡"
+    created = create_category(client, token, "咖啡豆", "expense", "🧋", "#795548")
+    assert created["name"] == "咖啡豆"
     assert created["kind"] == "expense"
-    assert created["icon"] == "☕"
+    assert created["icon"] == "🧋"
     assert created["color"] == "#795548"
     assert created["is_system"] is False
     assert created["sort"] > 90  # 排在该类型系统分类之后
 
     categories = list_categories(client, token)
-    assert find_category(client, token, "咖啡", "expense")["id"] == created["id"]
+    assert find_category(client, token, "咖啡豆", "expense")["id"] == created["id"]
     keys = [(item["kind"], item["sort"]) for item in categories]
     assert keys == sorted(keys)
 

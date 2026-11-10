@@ -24,10 +24,10 @@ export const useLedgerStore = defineStore('ledger', () => {
 		categories.value = data as any[]
 	}
 
-	async function loadTransactions(month: string = '', keyword: string = '', targetPage: number = 1): Promise<void> {
+	async function loadTransactions(month: string = '', keyword: string = '', targetPage: number = 1, filters: any = null): Promise<void> {
 		loading.value = true
 		try {
-			const data = await api.transactions.list(month, keyword, targetPage, pageSize.value)
+			const data = await api.transactions.list(month, keyword, targetPage, pageSize.value, filters)
 			transactions.value = data.items
 			total.value = data.total
 			page.value = data.page
@@ -36,9 +36,9 @@ export const useLedgerStore = defineStore('ledger', () => {
 		}
 	}
 
-	async function loadMore(month: string = '', keyword: string = ''): Promise<void> {
+	async function loadMore(month: string = '', keyword: string = '', filters: any = null): Promise<void> {
 		const nextPage = page.value + 1
-		const data = await api.transactions.list(month, keyword, nextPage, pageSize.value)
+		const data = await api.transactions.list(month, keyword, nextPage, pageSize.value, filters)
 		transactions.value = transactions.value.concat(data.items)
 		total.value = data.total
 		page.value = data.page

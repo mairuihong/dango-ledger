@@ -1,6 +1,6 @@
 # 团子账本 · Dango Ledger 前端
 
-uni-app x **蒸汽模式**（HBuilderX 项目根目录）。Vue3 组合式 API + Pinia，所有业务数据走 HTTP 接口，前端不落盘。
+uni-app x **蒸汽模式**（HBuilder V 项目根目录）。Vue3 组合式 API + Pinia，所有业务数据走 HTTP 接口，前端不落盘。
 
 界面参考「小青账」的轻量卡片式布局，用团子图标的**抹茶绿 / 樱花粉 / 乳白**做设计变量：浅绿背景、白色卡片、大金额首页、底部四个 tab、记账页固定数字键盘。
 
@@ -23,8 +23,9 @@ uni-app x **蒸汽模式**（HBuilderX 项目根目录）。Vue3 组合式 API +
 
 ## 环境
 
-- HBuilderX 5.26+（本机安装在 `C:\software\code\HBuilderX`；蒸汽模式见 manifest 的 `"uni-app-x": { "vapor": true }`）
+- [HBuilder V](https://www.dcloud.io/hbuilderv.html)（基于 VS Code，仅支持 uni-app x 蒸汽模式；插件市场为 Open VSX）
 - Node.js / npm（安装 Pinia）
+- 微信小程序需另外安装微信开发者工具
 
 ## 安装与运行
 
@@ -33,17 +34,11 @@ cd dango-frontend
 npm install
 ```
 
-用 HBuilderX 打开本目录，然后运行到 Web / 微信开发者工具 / Android 真机。
+用 HBuilder V 打开本目录，然后运行到 Web / 微信开发者工具 / Android 真机。
 
-> HBuilderX 5.26 的 Web 平台仍以 VDOM 模式运行（官方设计），App 端才是蒸汽模式。
+> Web / 小程序仍以 VDOM 模式运行，App 端才是蒸汽模式（平台机制，与编辑器无关）。
 
-命令行编译 Web（需要 HBuilderX 已启动）：
-
-```bash
-"C:\software\code\HBuilderX\cli.exe" publish web --project "D:\testProject\团子账本\dango-ledger\dango-frontend" --webTitle "团子账本"
-```
-
-产物在 `unpackage/dist/build/web`。
+HBuilder V 不提供 CLI，Web 编译和产物生成请在它的「运行 / 发行」菜单中完成。产物通常位于 `unpackage/dist/` 下。
 
 ## 接口地址
 
@@ -89,4 +84,4 @@ static/icon/      App 图标与透明团子标记
 - 金额展示用「分」整数格式化；余额和统计以服务端返回为准。
 - 样式只用简单 class（蒸汽模式 CSS 子集），不要写复杂后代选择器。
 
-完整规范见 [CONTRIBUTING.md](../CONTRIBUTING.md)；提交前运行 `..\scripts\check.ps1 -Frontend`（需要 HBuilderX 已启动）。
+完整规范见 [CONTRIBUTING.md](../CONTRIBUTING.md)；后端提交前运行 `..\scripts\check.ps1`，前端在 HBuilder V 中运行 H5 确认无编译错误。

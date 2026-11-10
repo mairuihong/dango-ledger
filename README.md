@@ -7,9 +7,9 @@
 ```
 dango-ledger/
 ├── dango-backend/       Python + FastAPI + SQLite（CRUD / 统计 / 预算）
-├── dango-frontend/      uni-app x 蒸汽模式（HBuilderX 项目根目录）
+├── dango-frontend/      uni-app x 蒸汽模式（HBuilder V 项目根目录）
 ├── design/icon/         三彩团子图标（SVG + 多尺寸 PNG）
-├── scripts/check.ps1    后端格式/lint/测试 + 可选前端编译
+├── scripts/check.ps1    后端格式/lint/测试 + 可选前端静态检查
 ├── CONTRIBUTING.md      代码规范 / 提交规范
 └── README.md
 ```
@@ -19,6 +19,11 @@ dango-ledger/
 - 后端：Python 3.10+ / FastAPI / Uvicorn / 标准库 sqlite3 / PyJWT / pytest
 - 前端：uni-app x 蒸汽模式、Vue3 组合式 API、Pinia、内置组件（暂未引入 uni-ui x）
 - 数据：全部走 `/api/*` 接口；前端无本地数据库、无业务数据缓存
+
+## 开发工具
+
+- 前端：**HBuilder V**。用它打开 `dango-frontend/`，运行到 H5 / 微信小程序 / Android；HBuilder V 没有 CLI，前端编译在 GUI 中完成。
+- 后端：**VS Code**。用它打开 `dango-backend/`，选择 `.venv` 解释器，配合 Python / Ruff 扩展运行 `pytest` 和 Ruff。
 
 ## 界面
 
@@ -54,7 +59,9 @@ python -m pytest tests -v
 
 ### 前端
 
-用 HBuilderX 打开 `dango-frontend/`（uni-app x 项目），运行到 H5 / 微信小程序 / Android。
+用 [HBuilder V](https://www.dcloud.io/hbuilderv.html) 打开 `dango-frontend/`（仅支持 uni-app x 蒸汽模式），运行到 H5 / 微信小程序 / Android。
+
+> HBuilder V 没有 CLI，前端编译/运行在它的「运行 / 发行」菜单里完成；微信小程序需另外安装微信开发者工具。
 
 ```bash
 cd dango-frontend
@@ -75,7 +82,7 @@ npm install
 
 ```powershell
 .\scripts\check.cmd             # ruff format/check + pytest
-.\scripts\check.cmd -Frontend   # 再加 HBuilderX Web 编译（需 HBuilderX 已启动）
+.\scripts\check.cmd -Frontend   # 前端静态检查（manifest/pages/页面文件），不是编译
 ```
 
 - 前端为 uni-app x 蒸汽模式：样式只用简单 class（BEM），数据只走 Pinia → API，不落本地存储，更新接口用 PUT。

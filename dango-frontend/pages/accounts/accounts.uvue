@@ -210,7 +210,8 @@
 <style>
 	.asset-hero {
 		position: relative;
-		background-color: #a9c89b;
+		background-color: #a8ded0;
+		background-image: linear-gradient(135deg, #c9efe5, #8fd6c5);
 		border-radius: 34rpx;
 		padding: 32rpx;
 		margin-bottom: 22rpx;
@@ -218,13 +219,13 @@
 	}
 
 	.asset-label {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 24rpx;
 	}
 
 	.asset-total {
 		display: block;
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-size: 56rpx;
 		font-weight: 700;
 		margin-top: 6rpx;
@@ -244,12 +245,12 @@
 	}
 
 	.asset-meta-label {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 21rpx;
 	}
 
 	.asset-meta-value {
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-size: 24rpx;
 		font-weight: 600;
 		margin-top: 4rpx;
@@ -294,7 +295,7 @@
 	.field-value {
 		text-align: right;
 		font-size: 26rpx;
-		color: #2f3a2c;
+		color: #1d2b28;
 	}
 
 	.form-actions {
@@ -328,11 +329,11 @@
 		padding: 18rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f1f5ec;
+		border-bottom-color: #e8f2ee;
 	}
 
 	.account-icon {
-		background-color: #f1f6ec;
+		background-color: #eef7f4;
 	}
 
 	.account-main {

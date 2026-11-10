@@ -20,12 +20,15 @@
 				</view>
 				<view v-if="categoryList.length === 0" class="empty">还没有分类，先去添加一个吧</view>
 				<view class="cat-grid">
-					<view v-for="(cat, index) in categoryList" :key="cat.id" class="cat-item" @click="selectCategory(cat)">
+					<view v-for="(cat, index) in visibleCategories" :key="cat.id" class="cat-item" @click="selectCategory(cat)">
 						<view class="cat-icon" :class="[toneClass(index), selectedCategoryId === cat.id ? 'cat-selected' : '']">
 							<text class="cat-emoji">{{ cat.icon }}</text>
 						</view>
 						<text class="cat-name">{{ cat.name }}</text>
 					</view>
+				</view>
+				<view v-if="categoryList.length > 8" class="cat-more" @click="showAllCategories = !showAllCategories">
+					{{ showAllCategories ? '收起分类' : '更多分类（' + (categoryList.length - 8) + '）' }}
 				</view>
 			</view>
 
@@ -99,6 +102,7 @@
 	const date = ref(localDate())
 	const note = ref('')
 	const saving = ref(false)
+	const showAllCategories = ref(false)
 	const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫']
 
 	const accounts = computed((): any[] => ledger.accounts)
@@ -145,6 +149,16 @@
 		if (decimals == 0) return text + '00'
 		if (decimals == 1) return text + '0'
 		return text
+	})
+
+	const visibleCategories = computed((): any[] => {
+		if (showAllCategories.value) return categoryList.value
+		const result: any[] = []
+		const limit = categoryList.value.length < 8 ? categoryList.value.length : 8
+		for (let index = 0; index < limit; index++) {
+			result.push(categoryList.value[index])
+		}
+		return result
 	})
 
 	const recentNotes = computed((): string[] => {
@@ -217,6 +231,11 @@
 		selectedCategoryId.value = found.category_id != null ? found.category_id : ''
 		date.value = found.occurred_at.slice(0, 10)
 		note.value = found.note
+		for (let index = 0; index < categoryList.value.length; index++) {
+			if (categoryList.value[index].id == selectedCategoryId.value && index >= 8) {
+				showAllCategories.value = true
+			}
+		}
 		for (let index = 0; index < accounts.value.length; index++) {
 			if (accounts.value[index].id == found.account_id) accountIndex.value = index
 			if (found.to_account_id != null && accounts.value[index].id == found.to_account_id) toIndex.value = index
@@ -234,6 +253,7 @@
 		if (txId.value !== '') return
 		txType.value = type
 		selectedCategoryId.value = ''
+		showAllCategories.value = false
 		if (type !== 'transfer') setDefaultCategory()
 	}
 
@@ -383,7 +403,7 @@
 	}
 
 	.seg-active {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 		color: #ffffff;
 		font-weight: 600;
 	}
@@ -415,7 +435,7 @@
 	.cat-icon {
 		width: 76rpx;
 		height: 76rpx;
-		border-radius: 38rpx;
+		border-radius: 26rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -425,7 +445,7 @@
 	}
 
 	.cat-selected {
-		border-color: #6f8f63;
+		border-color: #2e9e8f;
 	}
 
 	.cat-emoji {
@@ -436,6 +456,14 @@
 		font-size: 20rpx;
 		color: #6c7766;
 		margin-top: 6rpx;
+	}
+
+	.cat-more {
+		margin-top: 16rpx;
+		text-align: center;
+		color: #2e9e8f;
+		font-size: 23rpx;
+		font-weight: 600;
 	}
 
 	.tone-0 {
@@ -478,8 +506,8 @@
 	}
 
 	.chip {
-		background-color: #f4f7ef;
-		color: #5f6b59;
+		background-color: #edf6f2;
+		color: #526762;
 		font-size: 23rpx;
 		padding: 10rpx 20rpx;
 		border-radius: 999rpx;
@@ -499,8 +527,8 @@
 	}
 
 	.suggest-chip {
-		background-color: #f8f1f2;
-		color: #8d6a70;
+		background-color: #f7edf0;
+		color: #8a6c71;
 		font-size: 22rpx;
 		padding: 8rpx 18rpx;
 		border-radius: 999rpx;
@@ -514,7 +542,8 @@
 		right: 0;
 		bottom: 0;
 		z-index: 10;
-		background-color: #a9c89b;
+		background-color: #a8ded0;
+		background-image: linear-gradient(135deg, #c9efe5, #8fd6c5);
 		border-radius: 30rpx 30rpx 0 0;
 		padding: 22rpx 18rpx 28rpx;
 	}
@@ -529,20 +558,20 @@
 	}
 
 	.keypad-label {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 22rpx;
 	}
 
 	.keypad-amount {
 		flex: 1;
 		text-align: right;
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-size: 34rpx;
 		font-weight: 700;
 	}
 
 	.keypad-clear {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 22rpx;
 		margin-left: 18rpx;
 	}
@@ -563,7 +592,7 @@
 
 	.key-label {
 		font-size: 36rpx;
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-weight: 500;
 	}
 
@@ -583,13 +612,13 @@
 
 	.key-again {
 		flex: 1;
-		background-color: #c3d9b7;
+		background-color: #c7e7df;
 		margin-right: 12rpx;
 	}
 
 	.key-save {
 		flex: 2;
-		background-color: #4f6a46;
+		background-color: #1f6f66;
 	}
 
 	.key-save-full {
@@ -598,7 +627,7 @@
 
 	.key-action-text {
 		font-size: 30rpx;
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-weight: 600;
 	}
 

@@ -140,7 +140,7 @@
 	}
 
 	.tab-active {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 		color: #ffffff;
 		font-weight: 600;
 	}
@@ -164,7 +164,7 @@
 		position: relative;
 		width: 88rpx;
 		height: 88rpx;
-		border-radius: 44rpx;
+		border-radius: 26rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -190,13 +190,13 @@
 
 	.cat-name {
 		font-size: 21rpx;
-		color: #3f4b39;
+		color: #2a4540;
 		margin-top: 8rpx;
 	}
 
 	.cat-flag {
 		font-size: 18rpx;
-		color: #a5ada0;
+		color: #93a49f;
 		margin-top: 2rpx;
 	}
 
@@ -264,7 +264,7 @@
 	}
 
 	.color-active {
-		border-color: #2f3a2c;
+		border-color: #1d2b28;
 	}
 
 	.add-btn {

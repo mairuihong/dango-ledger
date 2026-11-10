@@ -241,11 +241,11 @@
 		width: 60rpx;
 		height: 60rpx;
 		border-radius: 30rpx;
-		background-color: #f1f6ec;
+		background-color: #eef7f4;
 		text-align: center;
 		line-height: 54rpx;
 		font-size: 38rpx;
-		color: #5f6b59;
+		color: #526762;
 	}
 
 	.month-title {
@@ -263,7 +263,7 @@
 		flex: 1;
 		text-align: center;
 		font-size: 22rpx;
-		color: #9aa393;
+		color: #8fa19c;
 	}
 
 	.calendar-grid {
@@ -290,7 +290,7 @@
 	}
 
 	.cell-selected {
-		border-color: #6f8f63;
+		border-color: #2e9e8f;
 		background-color: #eef5e8;
 	}
 
@@ -308,7 +308,7 @@
 
 	.day-num {
 		font-size: 24rpx;
-		color: #3f4b39;
+		color: #2a4540;
 	}
 
 	.day-expense {
@@ -330,7 +330,7 @@
 		padding: 16rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f1f5ec;
+		border-bottom-color: #e8f2ee;
 	}
 
 	.tx-main {
@@ -351,7 +351,7 @@
 		width: 104rpx;
 		height: 104rpx;
 		border-radius: 52rpx;
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 		color: #ffffff;
 		font-size: 52rpx;
 		text-align: center;
@@ -359,14 +359,14 @@
 	}
 
 	.tone-expense {
-		background-color: #fcecec;
+		background-color: #fdeeee;
 	}
 
 	.tone-income {
-		background-color: #eaf4e5;
+		background-color: #e3f5ee;
 	}
 
 	.tone-transfer {
-		background-color: #eef2f8;
+		background-color: #eaf2f7;
 	}
 </style>

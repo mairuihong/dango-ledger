@@ -206,7 +206,7 @@
 		text-align: center;
 		line-height: 58rpx;
 		font-size: 40rpx;
-		color: #5f6b59;
+		color: #526762;
 		margin-left: 14rpx;
 		margin-right: 14rpx;
 	}
@@ -237,7 +237,7 @@
 	}
 
 	.tab-active {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 		color: #ffffff;
 		font-weight: 600;
 	}
@@ -264,7 +264,7 @@
 		border-radius: 9rpx;
 		overflow: hidden;
 		margin-top: 20rpx;
-		background-color: #f1f5ec;
+		background-color: #e8f2ee;
 	}
 
 	.allocation-seg {
@@ -289,7 +289,7 @@
 
 	.bar-track {
 		height: 10rpx;
-		background-color: #f1f5ec;
+		background-color: #e8f2ee;
 		border-radius: 5rpx;
 		margin-top: 8rpx;
 		margin-bottom: 4rpx;
@@ -320,7 +320,7 @@
 	}
 
 	.legend-income {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 	}
 
 	.trend {
@@ -357,12 +357,12 @@
 	}
 
 	.trend-income {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 	}
 
 	.budget-track {
 		height: 16rpx;
-		background-color: #f1f5ec;
+		background-color: #e8f2ee;
 		border-radius: 8rpx;
 		margin-top: 20rpx;
 		overflow: hidden;
@@ -388,7 +388,7 @@
 	.budget-input {
 		flex: 1;
 		height: 72rpx;
-		background-color: #f4f7ef;
+		background-color: #edf6f2;
 		border-radius: 999rpx;
 		padding-left: 24rpx;
 		font-size: 26rpx;

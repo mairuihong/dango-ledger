@@ -35,20 +35,62 @@
 		</view>
 
 		<view class="search-row">
-			<input class="search-input" v-model="keyword" placeholder="搜索备注、分类" confirm-type="search" @confirm="reload" />
+			<input class="search-input" v-model="keyword" placeholder="搜索备注、分类、账户" confirm-type="search" @confirm="reload" />
 			<text class="search-action" @click="reload">搜索</text>
 		</view>
 
-		<scroll-view class="filter-scroll" scroll-x="true">
-			<view class="filter-inner">
-				<view v-for="item in filters" :key="item.key" class="pill filter-pill" :class="{ 'pill-active': filterType === item.key }" @click="pickType(item.key)">
-					{{ item.label }}
+		<view class="filter-bar">
+			<scroll-view class="filter-scroll" scroll-x="true">
+				<view class="filter-inner">
+					<view v-for="item in filters" :key="item.key" class="pill filter-pill" :class="{ 'pill-active': filterType === item.key }" @click="pickType(item.key)">
+						{{ item.label }}
+					</view>
+				</view>
+			</scroll-view>
+			<text class="filter-toggle" @click="showFilter = !showFilter">筛选{{ activeFilterCount > 0 ? ' · ' + activeFilterCount : '' }}</text>
+		</view>
+
+		<view v-if="showFilter" class="card filter-panel">
+			<view class="filter-row">
+				<text class="filter-label">分类</text>
+				<picker :range="categoryFilterNames" :value="categoryFilterIndex" @change="onCategoryFilterChange">
+					<view class="filter-value">{{ categoryFilterNames[categoryFilterIndex] }} ›</view>
+				</picker>
+			</view>
+			<view class="filter-row">
+				<text class="filter-label">账户</text>
+				<picker :range="accountFilterNames" :value="accountFilterIndex" @change="onAccountFilterChange">
+					<view class="filter-value">{{ accountFilterNames[accountFilterIndex] }} ›</view>
+				</picker>
+			</view>
+			<view class="filter-row">
+				<text class="filter-label">日期</text>
+				<view class="date-range">
+					<picker mode="date" :value="startDate" @change="onStartDateChange">
+						<view class="date-chip">{{ startDate === '' ? '开始' : startDate }}</view>
+					</picker>
+					<text class="date-sep">至</text>
+					<picker mode="date" :value="endDate" @change="onEndDateChange">
+						<view class="date-chip">{{ endDate === '' ? '结束' : endDate }}</view>
+					</picker>
 				</view>
 			</view>
-		</scroll-view>
+			<view class="filter-row">
+				<text class="filter-label">金额</text>
+				<view class="amount-range">
+					<input class="amount-input" v-model="minAmount" type="digit" placeholder="最低" />
+					<text class="date-sep">-</text>
+					<input class="amount-input" v-model="maxAmount" type="digit" placeholder="最高" />
+				</view>
+			</view>
+			<view class="filter-actions">
+				<button class="btn-soft filter-btn" @click="resetFilters">重置</button>
+				<button class="btn-primary filter-btn" @click="applyFilters">应用筛选</button>
+			</view>
+		</view>
 
 		<view v-if="groups.length === 0 && !ledger.loading" class="card empty">
-			{{ keyword === '' ? '这个月还没有账单' : '没有找到匹配的账单' }}
+			{{ keyword === '' && activeFilterCount === 0 ? '这个月还没有账单' : '没有找到匹配的账单' }}
 		</view>
 
 		<view v-for="group in groups" :key="group.date" class="day-block">
@@ -89,7 +131,7 @@
 	import { useAuthStore } from '@/stores/auth.uts'
 	import { useLedgerStore } from '@/stores/ledger.uts'
 	import { useStatsStore } from '@/stores/stats.uts'
-	import { formatCents } from '@/utils/money.uts'
+	import { formatCents, yuanToCents } from '@/utils/money.uts'
 	import { daysInMonth, localDate, localMonth, monthTitle, shiftMonth } from '@/utils/date.uts'
 	import DangoTabBar from '@/components/DangoTabBar.uvue'
 
@@ -99,12 +141,48 @@
 	const month = ref(localMonth())
 	const keyword = ref('')
 	const filterType = ref('all')
+	const showFilter = ref(false)
+	const filterCategoryId = ref('')
+	const filterAccountId = ref('')
+	const categoryFilterIndex = ref(0)
+	const accountFilterIndex = ref(0)
+	const minAmount = ref('')
+	const maxAmount = ref('')
+	const startDate = ref('')
+	const endDate = ref('')
 	const filters = [
 		{ key: 'all', label: '全部' },
 		{ key: 'expense', label: '支出' },
 		{ key: 'income', label: '收入' },
 		{ key: 'transfer', label: '转账' }
 	]
+
+	const categoryFilterNames = computed((): string[] => {
+		const result: string[] = ['全部分类']
+		for (let index = 0; index < ledger.categories.length; index++) {
+			const item = ledger.categories[index]
+			result.push(item.icon + ' ' + item.name)
+		}
+		return result
+	})
+
+	const accountFilterNames = computed((): string[] => {
+		const result: string[] = ['全部账户']
+		for (let index = 0; index < ledger.accounts.length; index++) {
+			result.push(ledger.accounts[index].name)
+		}
+		return result
+	})
+
+	const activeFilterCount = computed((): number => {
+		let count = 0
+		if (filterType.value != 'all') count++
+		if (filterCategoryId.value !== '') count++
+		if (filterAccountId.value !== '') count++
+		if (minAmount.value.trim() !== '' || maxAmount.value.trim() !== '') count++
+		if (startDate.value !== '' || endDate.value !== '') count++
+		return count
+	})
 
 	const overview = computed((): any => {
 		if (stats.overview == null) {
@@ -113,23 +191,13 @@
 		return stats.overview
 	})
 
-	const filtered = computed((): any[] => {
-		if (filterType.value == 'all') return ledger.transactions
-		const result: any[] = []
-		for (let index = 0; index < ledger.transactions.length; index++) {
-			const tx = ledger.transactions[index]
-			if (tx.type == filterType.value) result.push(tx)
-		}
-		return result
-	})
-
 	const groups = computed((): any[] => {
 		const result: any[] = []
 		const today = localDate()
 		let currentDate = ''
 		let current: any = null
-		for (let index = 0; index < filtered.value.length; index++) {
-			const tx = filtered.value[index]
+		for (let index = 0; index < ledger.transactions.length; index++) {
+			const tx = ledger.transactions[index]
 			const date = tx.occurred_at.slice(0, 10)
 			if (date != currentDate) {
 				currentDate = date
@@ -179,14 +247,37 @@
 		return result
 	})
 
+	function buildFilters(): any {
+		const result: any = {}
+		if (filterType.value != 'all') result.type = filterType.value
+		if (filterCategoryId.value !== '') result.category_id = filterCategoryId.value
+		if (filterAccountId.value !== '') result.account_id = filterAccountId.value
+		if (minAmount.value.trim() !== '') result.min_amount = yuanToCents(minAmount.value)
+		if (maxAmount.value.trim() !== '') result.max_amount = yuanToCents(maxAmount.value)
+		if (startDate.value !== '') result.start_date = startDate.value
+		if (endDate.value !== '') result.end_date = endDate.value
+		return result
+	}
+
 	async function reload(): Promise<void> {
 		if (!auth.loggedIn) {
 			uni.showToast({ title: '请先登录', icon: 'none' })
 			return
 		}
 		try {
-			await ledger.loadTransactions(month.value, keyword.value, 1)
+			const filterParams = buildFilters()
+			await ledger.loadTransactions(month.value, keyword.value, 1, filterParams)
 			await stats.loadOverview(month.value)
+		} catch (error) {
+			uni.showToast({ title: (error as Error).message, icon: 'none' })
+		}
+	}
+
+	async function initPage(): Promise<void> {
+		try {
+			await ledger.loadCategories()
+			await ledger.loadAccounts()
+			await reload()
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		}
@@ -194,7 +285,7 @@
 
 	onPageShow(() => {
 		if (auth.loggedIn) {
-			reload()
+			initPage()
 		}
 	})
 
@@ -211,12 +302,63 @@
 	}
 
 	function pickType(type: string): void {
+		if (type == filterType.value) return
 		filterType.value = type
+		filterCategoryId.value = ''
+		categoryFilterIndex.value = 0
+		reload()
+	}
+
+	function onCategoryFilterChange(event: any): void {
+		const index = Number(event.detail.value)
+		categoryFilterIndex.value = index
+		if (index == 0) {
+			filterCategoryId.value = ''
+		} else if (index - 1 < ledger.categories.length) {
+			filterCategoryId.value = ledger.categories[index - 1].id
+		}
+	}
+
+	function onAccountFilterChange(event: any): void {
+		const index = Number(event.detail.value)
+		accountFilterIndex.value = index
+		if (index == 0) {
+			filterAccountId.value = ''
+		} else if (index - 1 < ledger.accounts.length) {
+			filterAccountId.value = ledger.accounts[index - 1].id
+		}
+	}
+
+	function onStartDateChange(event: any): void {
+		startDate.value = event.detail.value.toString()
+	}
+
+	function onEndDateChange(event: any): void {
+		endDate.value = event.detail.value.toString()
+	}
+
+	function applyFilters(): void {
+		showFilter.value = false
+		reload()
+	}
+
+	function resetFilters(): void {
+		filterType.value = 'all'
+		filterCategoryId.value = ''
+		filterAccountId.value = ''
+		categoryFilterIndex.value = 0
+		accountFilterIndex.value = 0
+		minAmount.value = ''
+		maxAmount.value = ''
+		startDate.value = ''
+		endDate.value = ''
+		showFilter.value = false
+		reload()
 	}
 
 	async function loadMore(): Promise<void> {
 		try {
-			await ledger.loadMore(month.value, keyword.value)
+			await ledger.loadMore(month.value, keyword.value, buildFilters())
 		} catch (error) {
 			uni.showToast({ title: (error as Error).message, icon: 'none' })
 		}
@@ -295,7 +437,7 @@
 		text-align: center;
 		line-height: 58rpx;
 		font-size: 40rpx;
-		color: #5f6b59;
+		color: #526762;
 	}
 
 	.month-center {
@@ -313,7 +455,7 @@
 	.calendar-link {
 		position: absolute;
 		right: 12rpx;
-		color: #6f8f63;
+		color: #2e9e8f;
 		font-size: 24rpx;
 	}
 
@@ -377,12 +519,19 @@
 	}
 
 	.search-action {
-		color: #6f8f63;
+		color: #2e9e8f;
 		font-size: 24rpx;
 	}
 
-	.filter-scroll {
+	.filter-bar {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
 		margin-bottom: 10rpx;
+	}
+
+	.filter-scroll {
+		flex: 1;
 	}
 
 	.filter-inner {
@@ -392,6 +541,94 @@
 
 	.filter-pill {
 		margin-right: 12rpx;
+	}
+
+	.filter-toggle {
+		margin-left: 14rpx;
+		color: #2e9e8f;
+		font-size: 24rpx;
+		font-weight: 600;
+	}
+
+	.filter-panel {
+		padding-top: 8rpx;
+		padding-bottom: 24rpx;
+	}
+
+	.filter-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		min-height: 84rpx;
+		border-bottom-width: 1rpx;
+		border-bottom-style: solid;
+		border-bottom-color: #e8f2ee;
+	}
+
+	.filter-label {
+		width: 100rpx;
+		color: #526762;
+		font-size: 26rpx;
+	}
+
+	.filter-value {
+		flex: 1;
+		text-align: right;
+		font-size: 26rpx;
+		color: #1d2b28;
+	}
+
+	.date-range {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	.date-chip {
+		background-color: #eef7f4;
+		color: #526762;
+		font-size: 22rpx;
+		padding: 10rpx 18rpx;
+		border-radius: 999rpx;
+	}
+
+	.date-sep {
+		margin-left: 10rpx;
+		margin-right: 10rpx;
+		color: #8fa19c;
+		font-size: 22rpx;
+	}
+
+	.amount-range {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	.amount-input {
+		width: 160rpx;
+		height: 60rpx;
+		background-color: #eef7f4;
+		border-radius: 999rpx;
+		text-align: center;
+		font-size: 24rpx;
+	}
+
+	.filter-actions {
+		display: flex;
+		flex-direction: row;
+		margin-top: 22rpx;
+	}
+
+	.filter-btn {
+		flex: 1;
+		height: 76rpx;
+		font-size: 26rpx;
+		margin-left: 12rpx;
 	}
 
 	.day-block {
@@ -408,7 +645,7 @@
 
 	.day-label {
 		font-size: 24rpx;
-		color: #5f6b59;
+		color: #526762;
 		font-weight: 600;
 	}
 
@@ -424,7 +661,7 @@
 		padding: 16rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f1f5ec;
+		border-bottom-color: #e8f2ee;
 	}
 
 	.tx-main {
@@ -454,14 +691,14 @@
 	}
 
 	.tone-expense {
-		background-color: #fcecec;
+		background-color: #fdeeee;
 	}
 
 	.tone-income {
-		background-color: #eaf4e5;
+		background-color: #e3f5ee;
 	}
 
 	.tone-transfer {
-		background-color: #eef2f8;
+		background-color: #eaf2f7;
 	}
 </style>

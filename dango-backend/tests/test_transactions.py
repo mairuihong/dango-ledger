@@ -683,3 +683,115 @@ def test_blank_optional_ids_are_normalized(client: TestClient) -> None:
     assert clear.status_code == 200
     assert clear.json()["category_id"] is None
     assert get_account(client, token, source["id"])["balance"] == 9000
+
+
+def test_list_filters_by_type_category_account_amount_and_date(client: TestClient) -> None:
+    token, source, target, food, salary = _setup(client)
+    shopping = find_category(client, token, "购物", "expense")
+    create_transaction(
+        client,
+        token,
+        amount=3000,
+        account_id=source["id"],
+        category_id=food["id"],
+        occurred_at="2024-04-10",
+        note="午饭",
+    )
+    create_transaction(
+        client,
+        token,
+        amount=8000,
+        account_id=target["id"],
+        category_id=shopping["id"],
+        occurred_at="2024-05-10",
+        note="外套",
+    )
+    create_transaction(
+        client,
+        token,
+        tx_type="income",
+        amount=50000,
+        account_id=source["id"],
+        category_id=salary["id"],
+        occurred_at="2024-04-15",
+        note="工资",
+    )
+    create_transaction(
+        client,
+        token,
+        tx_type="transfer",
+        amount=2000,
+        account_id=source["id"],
+        to_account_id=target["id"],
+        occurred_at="2024-04-20",
+        note="转银行卡",
+    )
+
+    assert list_transactions(client, token, month="2024-04", type="expense")["total"] == 1
+    assert list_transactions(client, token, category_id=food["id"])["total"] == 1
+    assert list_transactions(client, token, account_id=target["id"])["total"] == 2  # 购物 + 转入
+    assert list_transactions(client, token, min_amount=5000, max_amount=10000)["total"] == 1
+    assert (
+        list_transactions(
+            client,
+            token,
+            start_date="2024-04-01",
+            end_date="2024-04-30",
+        )["total"]
+        == 3
+    )
+    assert (
+        list_transactions(client, token, start_date="2024-05-01", end_date="2024-05-31")["total"]
+        == 1
+    )
+
+
+def test_keyword_matches_account_name(client: TestClient) -> None:
+    token, source, _, food, _ = _setup(client)
+    create_transaction(
+        client,
+        token,
+        amount=1200,
+        account_id=source["id"],
+        category_id=food["id"],
+        note="没有关键字的备注",
+    )
+    matched = list_transactions(client, token, keyword="现金")
+    assert matched["total"] == 1
+    assert matched["items"][0]["account_name"] == "现金"
+
+
+def test_list_filter_validation(client: TestClient) -> None:
+    token = register(client)["token"]
+    assert (
+        client.get(
+            "/api/transactions",
+            headers=auth_headers(token),
+            params={"min_amount": 2000, "max_amount": 1000},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get(
+            "/api/transactions",
+            headers=auth_headers(token),
+            params={"start_date": "2024-05-01", "end_date": "2024-04-01"},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get(
+            "/api/transactions",
+            headers=auth_headers(token),
+            params={"type": "unknown"},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get(
+            "/api/transactions",
+            headers=auth_headers(token),
+            params={"start_date": "2024-4-1"},
+        ).status_code
+        == 422
+    )

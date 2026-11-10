@@ -1,32 +1,32 @@
 <template>
 	<view class="tabbar">
 		<view class="tabbar-inner">
-			<view class="tab-item" @click="go('/pages/index/index')">
+			<view class="tab-item" :class="{ 'tab-item-active': current === 'home' }" @click="go('/pages/index/index')">
 				<image class="tab-icon" :src="current === 'home' ? '/static/tabbar/home-active.png' : '/static/tabbar/home.png'" mode="aspectFit"></image>
 				<text class="tab-label" :class="{ 'tab-label-active': current === 'home' }">首页</text>
 			</view>
 
-			<view class="tab-item" @click="go('/pages/list/list')">
+			<view class="tab-item" :class="{ 'tab-item-active': current === 'bills' }" @click="go('/pages/list/list')">
 				<image class="tab-icon" :src="current === 'bills' ? '/static/tabbar/bills-active.png' : '/static/tabbar/bills.png'" mode="aspectFit"></image>
 				<text class="tab-label" :class="{ 'tab-label-active': current === 'bills' }">账单</text>
 			</view>
 
-			<view class="tab-plus-wrap">
-				<view class="tab-plus" @click="goEdit">
-					<text class="tab-plus-text">＋</text>
-				</view>
-			</view>
+			<view class="tab-plus-slot"></view>
 
-			<view class="tab-item" @click="go('/pages/stats/stats')">
+			<view class="tab-item" :class="{ 'tab-item-active': current === 'stats' }" @click="go('/pages/stats/stats')">
 				<image class="tab-icon" :src="current === 'stats' ? '/static/tabbar/report-active.png' : '/static/tabbar/report.png'" mode="aspectFit"></image>
 				<text class="tab-label" :class="{ 'tab-label-active': current === 'stats' }">报表</text>
 			</view>
 
-			<view class="tab-item" @click="go('/pages/mine/mine')">
+			<view class="tab-item" :class="{ 'tab-item-active': current === 'mine' }" @click="go('/pages/mine/mine')">
 				<image class="tab-icon" :src="current === 'mine' ? '/static/tabbar/mine-active.png' : '/static/tabbar/mine.png'" mode="aspectFit"></image>
 				<text class="tab-label" :class="{ 'tab-label-active': current === 'mine' }">我的</text>
 			</view>
 		</view>
+	</view>
+
+	<view class="tab-plus" @click="goEdit">
+		<text class="tab-plus-text">＋</text>
 	</view>
 </template>
 
@@ -59,15 +59,15 @@
 <style>
 	.tabbar {
 		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		left: 16rpx;
+		right: 16rpx;
+		bottom: 16rpx;
 		z-index: 99;
 		background-color: #ffffff;
-		border-top-width: 1rpx;
-		border-top-style: solid;
-		border-top-color: #e9eee2;
+		border-radius: 40rpx;
+		box-shadow: 0 18rpx 50rpx rgba(31, 111, 102, 0.16);
 		padding-bottom: env(safe-area-inset-bottom);
+		overflow: visible;
 	}
 
 	.tabbar-inner {
@@ -76,15 +76,22 @@
 		flex-direction: row;
 		align-items: center;
 		height: 112rpx;
+		overflow: visible;
 	}
 
 	.tab-item {
 		flex: 1;
-		height: 112rpx;
+		height: 96rpx;
+		margin: 8rpx 4rpx;
+		border-radius: 28rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+	}
+
+	.tab-item-active {
+		background-color: #e8f7f1;
 	}
 
 	.tab-icon {
@@ -94,36 +101,38 @@
 
 	.tab-label {
 		font-size: 20rpx;
-		color: #9aa694;
+		color: #8fa19c;
 		margin-top: 4rpx;
 	}
 
 	.tab-label-active {
-		color: #6f8f63;
+		color: #1f6f66;
 		font-weight: 600;
 	}
 
-	.tab-plus-wrap {
+	.tab-plus-slot {
 		width: 20%;
 		height: 112rpx;
-		position: relative;
 	}
 
 	.tab-plus {
-		position: absolute;
+		position: fixed;
 		left: 50%;
-		top: -38rpx;
+		bottom: 56rpx;
 		margin-left: -56rpx;
+		z-index: 100;
 		width: 112rpx;
 		height: 112rpx;
 		border-radius: 56rpx;
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
+		background-image: linear-gradient(135deg, #35b4a3, #1f8f82);
 		border-width: 8rpx;
 		border-style: solid;
-		border-color: #f4f7ef;
+		border-color: #edf6f2;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		box-shadow: 0 10rpx 24rpx rgba(31, 111, 102, 0.24);
 	}
 
 	.tab-plus-text {

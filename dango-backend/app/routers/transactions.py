@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -17,7 +17,13 @@ from ..db import (
     now_iso,
 )
 from ..deps import get_current_user, get_db
-from ..schemas import MONTH_PATTERN, TransactionCreate, TransactionPatch
+from ..schemas import (
+    DATE_PATTERN,
+    MAX_AMOUNT,
+    MONTH_PATTERN,
+    TransactionCreate,
+    TransactionPatch,
+)
 
 router = APIRouter(prefix="/transactions", tags=["流水"])
 
@@ -202,10 +208,17 @@ def _fetch_joined(db: Database, user_id: str, transaction_id: str) -> dict[str, 
     return transaction_public(row) if row is not None else None
 
 
-@router.get("", summary="流水列表（月份 / 关键字 / 分页）")
+@router.get("", summary="流水列表（月份 / 关键字 / 多条件筛选 / 分页）")
 def list_transactions(
     month: str | None = Query(default=None, pattern=MONTH_PATTERN),
     keyword: str | None = Query(default=None, max_length=100),
+    tx_type: Literal["expense", "income", "transfer"] | None = Query(default=None, alias="type"),
+    category_id: str | None = Query(default=None, max_length=64),
+    account_id: str | None = Query(default=None, max_length=64),
+    min_amount: int | None = Query(default=None, ge=0, le=MAX_AMOUNT),
+    max_amount: int | None = Query(default=None, ge=0, le=MAX_AMOUNT),
+    start_date: str | None = Query(default=None, pattern=DATE_PATTERN),
+    end_date: str | None = Query(default=None, pattern=DATE_PATTERN),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     user: dict[str, Any] = Depends(get_current_user),
@@ -215,6 +228,16 @@ def list_transactions(
     conditions = ["t.user_id = ?", "t.deleted_at IS NULL", "t.type <> 'transfer_in'"]
     params: list[Any] = [user_id]
 
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="min_amount 不能大于 max_amount",
+        )
+    if start_date is not None and end_date is not None and start_date > end_date:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="start_date 不能晚于 end_date"
+        )
+
     if month:
         start, end = month_range(month)
         conditions.append("t.occurred_at >= ? AND t.occurred_at < ?")
@@ -223,8 +246,39 @@ def list_transactions(
     cleaned_keyword = (keyword or "").strip()
     if cleaned_keyword:
         pattern = f"%{escape_like(cleaned_keyword)}%"
-        conditions.append("(t.note LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\')")
-        params.extend([pattern, pattern])
+        conditions.append(
+            "(t.note LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\' "
+            "OR a.name LIKE ? ESCAPE '\\' OR ta.name LIKE ? ESCAPE '\\')"
+        )
+        params.extend([pattern, pattern, pattern, pattern])
+
+    if tx_type:
+        conditions.append("t.type = ?")
+        params.append(tx_type)
+
+    if category_id and category_id.strip():
+        conditions.append("t.category_id = ?")
+        params.append(category_id.strip())
+
+    if account_id and account_id.strip():
+        conditions.append("(t.account_id = ? OR t.to_account_id = ?)")
+        params.extend([account_id.strip(), account_id.strip()])
+
+    if min_amount is not None:
+        conditions.append("t.amount >= ?")
+        params.append(min_amount)
+
+    if max_amount is not None:
+        conditions.append("t.amount <= ?")
+        params.append(max_amount)
+
+    if start_date is not None:
+        conditions.append("substr(t.occurred_at, 1, 10) >= ?")
+        params.append(start_date)
+
+    if end_date is not None:
+        conditions.append("substr(t.occurred_at, 1, 10) <= ?")
+        params.append(end_date)
 
     where_sql = " AND ".join(conditions)
     total = db.scalar(

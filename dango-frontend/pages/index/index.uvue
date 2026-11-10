@@ -237,7 +237,8 @@
 <style>
 	.hero {
 		position: relative;
-		background-color: #a9c89b;
+		background-color: #a8ded0;
+		background-image: linear-gradient(135deg, #c9efe5, #8fd6c5);
 		border-radius: 34rpx;
 		padding: 32rpx;
 		margin-bottom: 24rpx;
@@ -263,19 +264,19 @@
 	}
 
 	.hero-eyebrow {
-		color: #3f5138;
+		color: #1f6f66;
 		font-size: 24rpx;
 		font-weight: 600;
 	}
 
 	.hero-month {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 22rpx;
 	}
 
 	.hero-amount {
 		display: block;
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-size: 64rpx;
 		font-weight: 700;
 		margin-top: 10rpx;
@@ -295,12 +296,12 @@
 	}
 
 	.hero-meta-label {
-		color: #4f6a46;
+		color: #1f6f66;
 		font-size: 21rpx;
 	}
 
 	.hero-meta-value {
-		color: #2f3a2c;
+		color: #1d2b28;
 		font-size: 24rpx;
 		font-weight: 600;
 		margin-top: 4rpx;
@@ -316,7 +317,7 @@
 
 	.budget-fill {
 		height: 10rpx;
-		background-color: #4f6a46;
+		background-color: #1f6f66;
 		border-radius: 5rpx;
 	}
 
@@ -344,7 +345,7 @@
 		margin-bottom: 22rpx;
 		border-width: 1rpx;
 		border-style: solid;
-		border-color: #edf2e7;
+		border-color: #e6f1ed;
 	}
 
 	.quick-item {
@@ -357,8 +358,8 @@
 	.quick-icon {
 		width: 76rpx;
 		height: 76rpx;
-		border-radius: 38rpx;
-		background-color: #f1f6ec;
+		border-radius: 26rpx;
+		background-color: #eef7f4;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -366,7 +367,7 @@
 
 	.quick-text {
 		font-size: 23rpx;
-		color: #5f6b59;
+		color: #526762;
 		margin-top: 10rpx;
 	}
 
@@ -384,7 +385,7 @@
 
 	.day-label {
 		font-size: 24rpx;
-		color: #5f6b59;
+		color: #526762;
 		font-weight: 600;
 	}
 
@@ -395,7 +396,7 @@
 		padding: 16rpx 0;
 		border-bottom-width: 1rpx;
 		border-bottom-style: solid;
-		border-bottom-color: #f1f5ec;
+		border-bottom-color: #e8f2ee;
 	}
 
 	.tx-main {
@@ -407,18 +408,18 @@
 
 	.tx-name {
 		font-size: 28rpx;
-		color: #2f3a2c;
+		color: #1d2b28;
 	}
 
 	.tone-expense {
-		background-color: #fcecec;
+		background-color: #fdeeee;
 	}
 
 	.tone-income {
-		background-color: #eaf4e5;
+		background-color: #e3f5ee;
 	}
 
 	.tone-transfer {
-		background-color: #eef2f8;
+		background-color: #eaf2f7;
 	}
 </style>

@@ -120,14 +120,19 @@ export const api: any = {
 		}
 	},
 	transactions: {
-		async list(month: string, keyword: string, page: number, pageSize: number): Promise<any> {
-			const query = buildQuery({
+		async list(month: string, keyword: string, page: number, pageSize: number, filters: any = null): Promise<any> {
+			const params: any = {
 				month: month,
 				keyword: keyword,
 				page: page,
 				page_size: pageSize
-			})
-			return await request('GET', '/api/transactions' + query)
+			}
+			if (filters != null) {
+				for (const key in filters) {
+					params[key] = filters[key]
+				}
+			}
+			return await request('GET', '/api/transactions' + buildQuery(params))
 		},
 		async create(payload: any): Promise<any> {
 			return await request('POST', '/api/transactions', payload)

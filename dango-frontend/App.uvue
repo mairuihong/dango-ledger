@@ -6,8 +6,8 @@
 
 <style>
 	page {
-		background-color: #f4f7ef;
-		color: #2f3a2c;
+		background-color: #edf6f2;
+		color: #1d2b28;
 		font-size: 28rpx;
 	}
 
@@ -17,12 +17,13 @@
 
 	.card {
 		background-color: #ffffff;
-		border-radius: 28rpx;
+		border-radius: 34rpx;
 		padding: 28rpx;
 		margin-bottom: 22rpx;
 		border-width: 1rpx;
 		border-style: solid;
-		border-color: #edf2e7;
+		border-color: #e6f1ed;
+		box-shadow: 0 12rpx 34rpx rgba(31, 111, 102, 0.07);
 	}
 
 	.row {
@@ -55,21 +56,21 @@
 	.section-title {
 		font-size: 28rpx;
 		font-weight: 600;
-		color: #2f3a2c;
+		color: #1d2b28;
 	}
 
 	.muted {
-		color: #8a9483;
+		color: #7b8d88;
 		font-size: 24rpx;
 	}
 
 	.tiny {
-		color: #9aa393;
+		color: #8fa19c;
 		font-size: 22rpx;
 	}
 
 	.income {
-		color: #5c8f55;
+		color: #2e9e8f;
 	}
 
 	.expense {
@@ -96,11 +97,11 @@
 	.icon-circle {
 		width: 76rpx;
 		height: 76rpx;
-		border-radius: 38rpx;
+		border-radius: 26rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: #f1f6ec;
+		background-color: #eef7f4;
 	}
 
 	.icon-emoji {
@@ -108,7 +109,8 @@
 	}
 
 	.btn-primary {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
+		background-image: linear-gradient(135deg, #35b4a3, #1f8f82);
 		color: #ffffff;
 		border-radius: 999rpx;
 		font-size: 30rpx;
@@ -116,15 +118,15 @@
 	}
 
 	.btn-soft {
-		background-color: #e7f0df;
-		color: #4f6a46;
+		background-color: #e2f4ee;
+		color: #1f6f66;
 		border-radius: 999rpx;
 		font-size: 28rpx;
 	}
 
 	.btn-text {
 		background-color: transparent;
-		color: #6f8f63;
+		color: #2e9e8f;
 		font-size: 26rpx;
 		padding: 0;
 		margin: 0;
@@ -134,23 +136,23 @@
 		padding: 10rpx 24rpx;
 		border-radius: 999rpx;
 		background-color: #ffffff;
-		color: #6c7766;
+		color: #526762;
 		font-size: 24rpx;
 		border-width: 1rpx;
 		border-style: solid;
-		border-color: #e8eee2;
+		border-color: #e2efeb;
 	}
 
 	.pill-active {
-		background-color: #6f8f63;
+		background-color: #2e9e8f;
 		color: #ffffff;
-		border-color: #6f8f63;
+		border-color: #2e9e8f;
 	}
 
 	.empty {
 		padding: 60rpx 0;
 		text-align: center;
-		color: #9aa393;
+		color: #8fa19c;
 		font-size: 26rpx;
 	}
 </style>

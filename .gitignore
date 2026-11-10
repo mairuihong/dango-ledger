@@ -12,7 +12,7 @@ dango-backend/data/
 *.db-wal
 *.db-shm
 
-# HBuilderX / uni-app x
+# HBuilder V / uni-app x
 unpackage/
 .hbuilderx/
 node_modules/
