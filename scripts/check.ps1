@@ -1,5 +1,5 @@
 # 后端检查脚本。
-# HBuilder V 没有 CLI，前端编译/运行请在 HBuilder V GUI 中完成；
+# 前端编译/运行在 HBuilderX 中完成（HBuilderX 自带 cli.exe，需先启动 HBuilderX）；
 # -Frontend 只做前端静态检查（manifest / pages.json / 页面文件），不代表已编译。
 
 param(
@@ -58,7 +58,7 @@ if ($Frontend) {
     }
 
     Write-Host 'Frontend static checks passed.' -ForegroundColor Green
-    Write-Host 'HBuilder V has no CLI. Open dango-frontend in HBuilder V and run/compile from the GUI.' -ForegroundColor Yellow
+    Write-Host 'Compile/run in HBuilderX (cli.exe needs HBuilderX running). Open dango-frontend and launch to H5 / mp-weixin / Android.' -ForegroundColor Yellow
 }
 
 Write-Host 'All checks passed.' -ForegroundColor Green
